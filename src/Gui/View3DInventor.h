@@ -28,6 +28,7 @@
 
 #include <Base/Parameter.h>
 #include <QImage>
+#include <QGLWidget>
 
 class SoNode;
 class QPrinter;
