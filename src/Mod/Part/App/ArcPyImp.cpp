@@ -25,17 +25,17 @@
 #ifndef _PreComp_
 # include <gp_Circ.hxx>
 # include <Geom_Circle.hxx>
-# include <gp_Elips.hxx>
-# include <Geom_Ellipse.hxx>
+# include <gp_Hypr.hxx>
+# include <Geom_Hyperbola.hxx>
 # include <Geom_TrimmedCurve.hxx>
 # include <GC_MakeArcOfCircle.hxx>
-# include <GC_MakeArcOfEllipse.hxx>
+# include <GC_MakeArcOfHyperbola.hxx>
 #endif
 
 #include "ArcPy.h"
 #include "ArcPy.cpp"
 #include "CirclePy.h"
-#include "EllipsePy.h"
+#include "HyperbolaPy.h"
 #include "OCCError.h"
 
 #include <Base/VectorPy.h>
@@ -109,11 +109,11 @@ int ArcPy::PyInit(PyObject* args, PyObject* /*kwd*/)
     }
 
     PyErr_Clear();
-    if (PyArg_ParseTuple(args, "O!dd|O!", &(Part::EllipsePy::Type), &o, &u1, &u2, &PyBool_Type, &sense)) {
+    if (PyArg_ParseTuple(args, "O!dd|O!", &(Part::HyperbolaPy::Type), &o, &u1, &u2, &PyBool_Type, &sense)) {
         try {
-            Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast
-                (static_cast<EllipsePy*>(o)->getGeomEllipsePtr()->handle());
-            GC_MakeArcOfEllipse arc(ellipse->Elips(), u1, u2, PyObject_IsTrue(sense) ? Standard_True : Standard_False);
+            Handle_Geom_Hyperbola hyperbola = Handle_Geom_Hyperbola::DownCast
+                (static_cast<HyperbolaPy*>(o)->getGeomHyperbolaPtr()->handle());
+            GC_MakeArcOfHyperbola arc(hyperbola->Hypr(), u1, u2, PyObject_IsTrue(sense) ? Standard_True : Standard_False);
             if (!arc.IsDone()) {
                 PyErr_SetString(PartExceptionOCCError, gce_ErrorStatusText(arc.Status()));
                 return -1;
