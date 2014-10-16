@@ -25,17 +25,17 @@
 #ifndef _PreComp_
 # include <gp_Circ.hxx>
 # include <Geom_Circle.hxx>
-# include <gp_Elips.hxx>
-# include <Geom_Ellipse.hxx>
+# include <gp_Parab.hxx>
+# include <Geom_Parabola.hxx>
 # include <Geom_TrimmedCurve.hxx>
 # include <GC_MakeArcOfCircle.hxx>
-# include <GC_MakeArcOfEllipse.hxx>
+# include <GC_MakeArcOfParabola.hxx>
 #endif
 
 #include "ArcPy.h"
 #include "ArcPy.cpp"
 #include "CirclePy.h"
-#include "EllipsePy.h"
+#include "ParabolaPy.h"
 #include "OCCError.h"
 
 #include <Base/VectorPy.h>
@@ -109,11 +109,11 @@ int ArcPy::PyInit(PyObject* args, PyObject* /*kwd*/)
     }
 
     PyErr_Clear();
-    if (PyArg_ParseTuple(args, "O!dd|O!", &(Part::EllipsePy::Type), &o, &u1, &u2, &PyBool_Type, &sense)) {
+    if (PyArg_ParseTuple(args, "O!dd|O!", &(Part::ParabolaPy::Type), &o, &u1, &u2, &PyBool_Type, &sense)) {
         try {
-            Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast
-                (static_cast<EllipsePy*>(o)->getGeomEllipsePtr()->handle());
-            GC_MakeArcOfEllipse arc(ellipse->Elips(), u1, u2, PyObject_IsTrue(sense) ? Standard_True : Standard_False);
+            Handle_Geom_Parabola parabola = Handle_Geom_Parabola::DownCast
+                (static_cast<ParabolaPy*>(o)->getGeomParabolaPtr()->handle());
+            GC_MakeArcOfParabola arc(parabola->Parab(), u1, u2, PyObject_IsTrue(sense) ? Standard_True : Standard_False);
             if (!arc.IsDone()) {
                 PyErr_SetString(PartExceptionOCCError, gce_ErrorStatusText(arc.Status()));
                 return -1;
