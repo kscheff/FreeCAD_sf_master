@@ -2830,6 +2830,387 @@ bool CmdSketcherExternal::isActive(void)
     return isCreateGeoActive(getActiveGuiDocument());
 }
 
+// ======================================================================================
+
+/* XPM */
+static const char *cursor_createarcofhyperbola[]={
+"32 32 3 1",
+"+ c white",
+"# c red",
+". c None",
+"......+.........................",
+"......+.........................",
+"......+.........................",
+"......+.........................",
+"......+.........................",
+"................................",
+"+++++...+++++...................",
+"................................",
+"......+.........................",
+"......+.........................",
+"......+................##.......",
+"......+..............##.........",
+"......+............##...........",
+"......+...........##............",
+"................##..............",
+"...............##...............",
+"..............##................",
+".............###................",
+"..###.......##..................",
+".#.#.......##...................",
+"..###......##...................",
+"..........##....................",
+".........##.....................",
+"........##......................",
+"........##......................",
+"........##......................",
+"........#.....####..............",
+"........######..................",
+"................................",
+"................................",
+"................................",
+"................................"};
+
+class DrawSketchHandlerArcOfHyperbola : public DrawSketchHandler
+{
+public:
+    DrawSketchHandlerArcOfHyperbola() : Mode(STATUS_SEEK_First),EditCurve(34){}
+    virtual ~DrawSketchHandlerArcOfHyperbola(){}
+    /// mode table
+    enum SelectMode {
+        STATUS_SEEK_First,      /**< enum value ----. */
+        STATUS_SEEK_Second,     /**< enum value ----. */
+        STATUS_SEEK_Third,     /**< enum value ----. */      
+        STATUS_SEEK_Fourth,     /**< enum value ----. */
+        STATUS_Close
+    };
+
+    virtual void activated(ViewProviderSketch *sketchgui)
+    {
+        setCursor(QPixmap(cursor_createarcofhyperbola),7,7);
+    }
+
+    virtual void mouseMove(Base::Vector2D onSketchPos)
+    {
+        if (Mode==STATUS_SEEK_First) {
+            setPositionText(onSketchPos);
+            if (seekAutoConstraint(sugConstr1, onSketchPos, Base::Vector2D(0.f,0.f))) {
+                renderSuggestConstraintsCursor(sugConstr1);
+                return;
+            }
+        }
+        else if (Mode==STATUS_SEEK_Second) {
+            double rx0 = onSketchPos.fX - EditCurve[0].fX;
+            double ry0 = onSketchPos.fY - EditCurve[0].fY;
+            /*for (int i=0; i < 16; i++) {
+                double angle = i*M_PI/16.0;
+                double rx = rx0 * cosh(angle) + ry0 * sinh(angle);
+                double ry = -rx0 * sinh(angle) + ry0 * cosh(angle);
+                EditCurve[1+i] = Base::Vector2D(EditCurve[0].fX + rx, EditCurve[0].fY + ry);
+                EditCurve[17+i] = Base::Vector2D(EditCurve[0].fX - rx, EditCurve[0].fY - ry);
+            }*/
+            EditCurve[33] = EditCurve[1];
+
+            // Display radius for user
+            float radius = (onSketchPos - EditCurve[0]).Length();
+
+            SbString text;
+            text.sprintf(" (%.1fR,%.1fR)", radius,radius);
+            setPositionText(onSketchPos, text);
+
+            sketchgui->drawEdit(EditCurve);
+            if (seekAutoConstraint(sugConstr2, onSketchPos, Base::Vector2D(0.f,0.f),
+                                   AutoConstraint::CURVE)) {
+                renderSuggestConstraintsCursor(sugConstr2);
+                return;
+            }
+        }
+        else if (Mode==STATUS_SEEK_Third) {                       
+            // angle between the major axis of the hyperbola and the X axis
+            double a = (EditCurve[1]-EditCurve[0]).Length();
+            double phi = atan2(EditCurve[1].fY-EditCurve[0].fY,EditCurve[1].fX-EditCurve[0].fX);
+            
+            // This is the angle at cursor point
+            double angleatpoint = acosh((onSketchPos.fX-EditCurve[0].fX+(onSketchPos.fY-EditCurve[0].fY)*tan(phi))/(a*(cos(phi)+tan(phi)*sin(phi))));
+            double b=(onSketchPos.fY-EditCurve[0].fY-a*cosh(angleatpoint)*sin(phi))/(sinh(angleatpoint)*cos(phi));
+                        
+            for (int i=1; i < 16; i++) {
+                // P(U) = O + MajRad*Cosh(U)*XDir + MinRad*Sinh(U)*YDir
+                double angle = i*M_PI/16.0;
+                double rx = a * cosh(angle) * cos(phi) - b * sinh(angle) * sin(phi); 
+                double ry = a * cosh(angle) * sin(phi) + b * sinh(angle) * cos(phi);
+                EditCurve[1+i] = Base::Vector2D(EditCurve[0].fX + rx, EditCurve[0].fY + ry);
+                EditCurve[17+i] = Base::Vector2D(EditCurve[0].fX - rx, EditCurve[0].fY - ry);
+            }
+            EditCurve[33] = EditCurve[1];
+            EditCurve[17] = EditCurve[16];
+
+            // Display radius for user
+            SbString text;
+            text.sprintf(" (%.1fR,%.1fR)", a, b);
+            setPositionText(onSketchPos, text);
+
+            sketchgui->drawEdit(EditCurve);
+            if (seekAutoConstraint(sugConstr3, onSketchPos, Base::Vector2D(0.f,0.f),
+                                   AutoConstraint::CURVE)) {
+                renderSuggestConstraintsCursor(sugConstr3);
+                return;
+            }
+        }
+        else if (Mode==STATUS_SEEK_Fourth) {
+            
+            // angle between the major axis of the hyperbola and the X axis
+            double a = (axisPoint-centerPoint).Length();
+            double phi = atan2((axisPoint.fY-centerPoint.fY),(axisPoint.fX-centerPoint.fX));
+            
+            // This is the angle at cursor point
+            double angleatpoint = acosh((startingPoint.fX-centerPoint.fX+(startingPoint.fY-centerPoint.fY)*tan(phi))/(a*(cos(phi)+tan(phi)*sin(phi))));
+            double b=abs((startingPoint.fY-centerPoint.fY-a*cosh(angleatpoint)*sin(phi))/(sinh(angleatpoint)*cos(phi)));
+            
+            double rxs = startingPoint.fX - centerPoint.fX;
+            double rys = startingPoint.fY - centerPoint.fY;
+            startAngle = atanh((a*(rys*cos(phi)-rxs*sin(phi)))/(b*(rxs*cos(phi)+rys*sin(phi)))); // eccentric anomaly angle
+            
+            double angle1 = atanh(a*((onSketchPos.fY - centerPoint.fY)*cos(phi)-(onSketchPos.fX - centerPoint.fX)*sin(phi))/ 
+                                  b*((onSketchPos.fX - centerPoint.fX)*cos(phi)+(onSketchPos.fY - centerPoint.fY)*sin(phi)))- startAngle;
+            
+            double angle2 = angle1 + (angle1 < 0. ? 2 : -2) * M_PI ;
+            arcAngle = abs(angle1-arcAngle) < abs(angle2-arcAngle) ? angle1 : angle2;
+                                    
+            for (int i=0; i < 34; i++) {
+                double angle = startAngle+i*arcAngle/34.0;
+                double rx = a * cosh(angle) * cos(phi) - b * sinh(angle) * sin(phi); 
+                double ry = a * cosh(angle) * sin(phi) + b * sinh(angle) * cos(phi);
+                EditCurve[i] = Base::Vector2D(centerPoint.fX + rx, centerPoint.fY + ry);
+            }
+//             EditCurve[33] = EditCurve[1];
+//             EditCurve[17] = EditCurve[16];
+
+            // Display radii and angle for user
+            SbString text;
+            text.sprintf(" (%.1fR,%.1fR,%.1fdeg)", a, b, arcAngle * 180 / M_PI);
+            setPositionText(onSketchPos, text);
+
+            sketchgui->drawEdit(EditCurve);
+            if (seekAutoConstraint(sugConstr4, onSketchPos, Base::Vector2D(0.f,0.f),
+                                   AutoConstraint::CURVE)) {
+                renderSuggestConstraintsCursor(sugConstr4);
+                return;
+            }
+        }
+        
+        
+        
+        applyCursor();
+    }
+
+    virtual bool pressButton(Base::Vector2D onSketchPos)
+    {
+        if (Mode==STATUS_SEEK_First){
+            EditCurve[0] = onSketchPos;
+            centerPoint = onSketchPos;
+            Mode = STATUS_SEEK_Second;
+        } 
+        else if(Mode==STATUS_SEEK_Second) {
+            EditCurve[1] = onSketchPos;
+            axisPoint = onSketchPos;
+            Mode = STATUS_SEEK_Third;
+        }
+        else if(Mode==STATUS_SEEK_Third) {
+            startingPoint = onSketchPos;
+            arcAngle = 0.;
+            arcAngle_t= 0.;
+            Mode = STATUS_SEEK_Fourth;
+        } 
+        else { // Fourth
+            endPoint = onSketchPos;
+                        
+            Mode = STATUS_Close;
+        }
+        return true;
+    }
+
+    virtual bool releaseButton(Base::Vector2D onSketchPos)
+    {
+        if (Mode==STATUS_Close) {
+            unsetCursor();
+            resetPositionText();
+            
+            double a = (axisPoint-centerPoint).Length();
+            // angle between the major axis of the hyperbola and the X axis
+            double phi = atan2((axisPoint.fY-centerPoint.fY),(axisPoint.fX-centerPoint.fX));
+            
+            // This is the angle at cursor point
+            double angleatpoint = acosh((startingPoint.fX-centerPoint.fX+(startingPoint.fY-centerPoint.fY)*tan(phi))/(a*(cos(phi)+tan(phi)*sin(phi))));
+            double b=abs((startingPoint.fY-centerPoint.fY-a*cosh(angleatpoint)*sin(phi))/(sinh(angleatpoint)*cos(phi)));
+            
+            double angle1 = atanh((a*((endPoint.fY - centerPoint.fY)*cos(phi)-(endPoint.fX - centerPoint.fX)*sin(phi)))/ 
+                                  (b*((endPoint.fX - centerPoint.fX)*cos(phi)+(endPoint.fY - centerPoint.fY)*sin(phi))))- startAngle;
+            
+            double angle2 = angle1 + (angle1 < 0. ? 2 : -2) * M_PI ;
+            arcAngle = abs(angle1-arcAngle) < abs(angle2-arcAngle) ? angle1 : angle2;
+            
+            if (arcAngle > 0)
+                endAngle = startAngle + arcAngle;
+            else {
+                endAngle = startAngle;
+                startAngle += arcAngle;
+            }
+            
+            Base::Vector2D majAxisDir,minAxisDir,minAxisPoint,majAxisPoint;
+            // We always create a CCW ellipse, because we want our XY reference system to be in the +X +Y direction
+            // Our normal will then always be in the +Z axis (local +Z axis of the sketcher)
+            
+            if(a>b)
+            {
+                // force second semidiameter to be perpendicular to first semidiamater
+                majAxisDir = axisPoint - centerPoint;
+                Base::Vector2D perp(-majAxisDir.fY,majAxisDir.fX);
+                perp.Normalize();
+                perp.Scale(abs(b));
+                minAxisPoint = centerPoint+perp;
+                majAxisPoint = centerPoint+majAxisDir;
+            }
+            else {
+                // force second semidiameter to be perpendicular to first semidiamater
+                minAxisDir = axisPoint - centerPoint;
+                Base::Vector2D perp(minAxisDir.fY,-minAxisDir.fX);
+                perp.Normalize();
+                perp.Scale(abs(b));
+                majAxisPoint = centerPoint+perp; 
+                minAxisPoint = centerPoint+minAxisDir;
+                endAngle +=  M_PI/2;
+                startAngle += M_PI/2;
+            }
+            
+            Base::Vector3d center = Base::Vector3d(centerPoint.fX,centerPoint.fY,0);
+            
+            Base::Vector3d majorpositiveend = center + a * Base::Vector3d(cos(phi),sin(phi),0);
+            Base::Vector3d majornegativeend = center - a * Base::Vector3d(cos(phi),sin(phi),0);  
+            Base::Vector3d minorpositiveend = center + b * Base::Vector3d(-sin(phi),cos(phi),0);
+            Base::Vector3d minornegativeend = center - b * Base::Vector3d(-sin(phi),cos(phi),0);
+                
+            double cf = sqrt( abs(a*a - b*b) );//using abs, avoided using different formula for a>b/a<b cases
+                
+            Base::Vector3d focus1P = center + cf * Base::Vector3d(cos(phi),sin(phi),0);
+            Base::Vector3d focus2P = center - cf * Base::Vector3d(cos(phi),sin(phi),0);
+            
+            int currentgeoid = getHighestCurveIndex();
+
+            Gui::Command::openCommand("Add sketch arc of hyperbola");
+
+            //Add arc of hyperbola, point and constrain point as focus2. We add focus2 for it to balance
+            //the intrinsic focus1, in order to balance out the intrinsic invisible focus1 when AOE is
+            //dragged by its center
+            Gui::Command::doCommand(Gui::Command::Doc,
+                "App.ActiveDocument.%s.addGeometry(Part.ArcOfHyperbola"
+                "(Part.Hyperbola(App.Vector(%f,%f,0),App.Vector(%f,%f,0),App.Vector(%f,%f,0)),"
+                "%f,%f))",
+                    sketchgui->getObject()->getNameInDocument(),
+                    majAxisPoint.fX, majAxisPoint.fY,                                    
+                    minAxisPoint.fX, minAxisPoint.fY,
+                    centerPoint.fX, centerPoint.fY,
+                    startAngle, endAngle);
+            /*
+            currentgeoid++;
+            
+            try {                 
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
+                    sketchgui->getObject()->getNameInDocument(),
+                    majorpositiveend.x,majorpositiveend.y,majornegativeend.x,majornegativeend.y); // create line for major axis
+                
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),currentgeoid+1);
+                
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('InternalAlignment:EllipseMajorDiameter',%d,%d)) ",
+                    sketchgui->getObject()->getNameInDocument(),currentgeoid+1,currentgeoid); // constrain major axis
+                
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
+                    sketchgui->getObject()->getNameInDocument(),
+                    minorpositiveend.x,minorpositiveend.y,minornegativeend.x,minornegativeend.y); // create line for minor axis
+                
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.toggleConstruction(%d) ",
+                    sketchgui->getObject()->getNameInDocument(),currentgeoid+2);
+                
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('InternalAlignment:EllipseMinorDiameter',%d,%d)) ",
+                    sketchgui->getObject()->getNameInDocument(),currentgeoid+2,currentgeoid); // constrain minor axis
+
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Point(App.Vector(%f,%f,0)))",
+                    sketchgui->getObject()->getNameInDocument(),
+                    focus1P.x,focus1P.y);
+                
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('InternalAlignment:EllipseFocus1',%d,%d,%d)) ",
+                    sketchgui->getObject()->getNameInDocument(),currentgeoid+3,Sketcher::start,currentgeoid);
+
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Point(App.Vector(%f,%f,0)))",
+                    sketchgui->getObject()->getNameInDocument(),
+                    focus2P.x,focus2P.y);
+                
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('InternalAlignment:EllipseFocus2',%d,%d,%d)) ",
+                    sketchgui->getObject()->getNameInDocument(),currentgeoid+4,Sketcher::start,currentgeoid);     
+            }
+            catch (const Base::Exception& e) {
+                Base::Console().Error("%s\n", e.what());
+                Gui::Command::abortCommand();
+                Gui::Command::updateActive();
+                return false;
+            }
+            */
+            Gui::Command::commitCommand();
+            Gui::Command::updateActive();
+            
+            // add auto constraints for the center point
+            if (sugConstr1.size() > 0) {
+                createAutoConstraints(sugConstr1, getHighestCurveIndex(), Sketcher::mid);
+                sugConstr1.clear();
+            }
+
+            // add suggested constraints for circumference
+            if (sugConstr2.size() > 0) {
+                //createAutoConstraints(sugConstr2, getHighestCurveIndex(), Sketcher::none);
+                sugConstr2.clear();
+            }
+
+            EditCurve.clear();
+            sketchgui->drawEdit(EditCurve);
+            sketchgui->purgeHandler(); // no code after this line, Handler get deleted in ViewProvider
+        }
+        return true;
+    }
+protected:
+    SelectMode Mode;
+    std::vector<Base::Vector2D> EditCurve;
+    Base::Vector2D centerPoint, axisPoint, startingPoint, endPoint;
+    double rx, ry, startAngle, endAngle, arcAngle, arcAngle_t;
+    std::vector<AutoConstraint> sugConstr1, sugConstr2, sugConstr3, sugConstr4;
+
+};
+
+DEF_STD_CMD_A(CmdSketcherCreateArcOfHyperbola);
+
+CmdSketcherCreateArcOfHyperbola::CmdSketcherCreateArcOfHyperbola()
+  : Command("Sketcher_CreateArcOfHyperbola")
+{
+    sAppModule      = "Sketcher";
+    sGroup          = QT_TR_NOOP("Sketcher");
+    sMenuText       = QT_TR_NOOP("Create an arc of hyperbola");
+    sToolTipText    = QT_TR_NOOP("Create an arc of hyperbola in the sketch");
+    sWhatsThis      = sToolTipText;
+    sStatusTip      = sToolTipText;
+    sPixmap         = "Sketcher_hyperbolic_Arc";
+    eType           = ForEdit;
+}
+
+void CmdSketcherCreateArcOfHyperbola::activated(int iMsg)
+{
+    ActivateHandler(getActiveGuiDocument(),new DrawSketchHandlerArcOfHyperbola() );
+}
+
+bool CmdSketcherCreateArcOfHyperbola::isActive(void)
+{
+    return isCreateGeoActive(getActiveGuiDocument());
+} 
+
 /* Create Slot =======================================================*/
 
 /* XPM */
@@ -3544,6 +3925,7 @@ void CreateSketcherCommandsCreateGeo(void)
     rcCmdMgr.addCommand(new CmdSketcherCreateCircle());
     rcCmdMgr.addCommand(new CmdSketcherCreate3PointCircle());
     rcCmdMgr.addCommand(new CmdSketcherCompCreateCircle());
+    rcCmdMgr.addCommand(new CmdSketcherCreateArcOfHyperbola());    
     rcCmdMgr.addCommand(new CmdSketcherCreateLine());
     rcCmdMgr.addCommand(new CmdSketcherCreatePolyline());
     rcCmdMgr.addCommand(new CmdSketcherCreateRectangle());

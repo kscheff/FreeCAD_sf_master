@@ -65,6 +65,20 @@ namespace GCS
         Point center;
         double *rad;
     };
+    
+    class ArcOfHyperbola
+    {
+    public:
+        ArcOfHyperbola(){startAngle=0;endAngle=0;radmaj = 0;}
+        double *startAngle;
+        double *endAngle;
+        double *radmaj;
+        Point start;
+        Point end;
+        Point center;
+        double *focus1X; //+u
+        double *focus1Y;
+    }
 
 } //namespace GCS
 
