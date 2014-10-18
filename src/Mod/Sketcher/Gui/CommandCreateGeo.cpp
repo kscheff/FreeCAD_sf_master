@@ -3089,6 +3089,13 @@ public:
             
             startAngle=M_PI/4;
             endAngle=-M_PI/4;
+            majAxisPoint.fX=20;
+            majAxisPoint.fY=0;
+            minAxisPoint.fX=0;
+            minAxisPoint.fY=10;
+            centerPoint.fX=0;
+            centerPoint.fY=0;
+            
             
             Base::Vector3d center = Base::Vector3d(centerPoint.fX,centerPoint.fY,0);
             
