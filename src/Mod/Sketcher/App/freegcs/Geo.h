@@ -78,7 +78,7 @@ namespace GCS
         Point center;
         double *focus1X; //+u
         double *focus1Y;
-    }
+    };
 
 } //namespace GCS
 

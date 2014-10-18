@@ -174,9 +174,9 @@ int Sketch::addGeometry(const Part::Geometry *geo, bool fixed)
         // create the definition struct for that geom
         return addArc(*aoc, fixed);
     } else if (geo->getTypeId() == GeomArcOfHyperbola::getClassTypeId()) { // add an arc of hyperbola
-        const GeomArcOfCircle *aoh = dynamic_cast<const GeomArcOfHyperbola*>(geo);
+        const GeomArcOfHyperbola *aoh = dynamic_cast<const GeomArcOfHyperbola*>(geo);
         // create the definition struct for that geom
-        return addArcOfHyperbola(*aoe, fixed);
+        return addArcOfHyperbola(*aoh, fixed);
     } else {
         Base::Exception("Sketch::addGeometry(): Unknown or unsupported type added to a sketch");
         return 0;
@@ -518,7 +518,7 @@ Py::Tuple Sketch::getPyGeometry(void) const
             GeomEllipse *ellipse = dynamic_cast<GeomEllipse*>(it->geo->clone());
             tuple[i] = Py::asObject(new EllipsePy(ellipse));
         } else if (it->type == ArcOfHyperbola) {
-            GeomArcOfHyperbola *aoh = dynamic_cast<GeomHyperbola*>(it->geo->clone());
+            GeomArcOfHyperbola *aoh = dynamic_cast<GeomArcOfHyperbola*>(it->geo->clone());
             tuple[i] = Py::asObject(new ArcOfHyperbolaPy(aoh));
         } else {
             // not implemented type in the sketch!
@@ -1283,31 +1283,7 @@ int Sketch::addTangentConstraint(int geoId1, PointPos pos1, int geoId2, PointPos
             }
             else if (pos2 == end) {
                 if (pos1 == start) {
-                    int tag = ++ConstraintsCountelse if (it->type == ArcOfEllipse) {
-                GCS::ArcOfEllipse &myArc = ArcsOfEllipse[it->index];
-
-                GeomArcOfEllipse *aoe = dynamic_cast<GeomArcOfEllipse*>(it->geo);
-                
-                Base::Vector3d center = Vector3d(*Points[it->midPointId].x, *Points[it->midPointId].y, 0.0);
-                Base::Vector3d f1 = Vector3d(*myArc.focus1X, *myArc.focus1Y, 0.0);
-                double radmin = *myArc.radmin;
-                
-                Base::Vector3d fd=f1-center;
-                double radmaj = sqrt(fd*fd+radmin*radmin);
-                                
-                double phi = atan2(fd.y,fd.x);
-                
-                aoe->setCenter(center);
-                if ( radmaj >= aoe->getMinorRadius() ){//ensure that ellipse's major radius is always larger than minor raduis... may still cause problems with degenerates.
-                    aoe->setMajorRadius(radmaj);
-                    aoe->setMinorRadius(radmin);
-                }  else {
-                    aoe->setMinorRadius(radmin);
-                    aoe->setMajorRadius(radmaj);
-                }
-                aoe->setAngleXU(phi);
-                aoe->setRange(*myArc.startAngle, *myArc.endAngle);
-            }er;
+                    int tag = ++ConstraintsCounter;
                     GCSsys.addConstraintTangentArc2Line(a2, l1.p1, l1.p2, tag);
                     return ConstraintsCounter;
                 }

@@ -121,6 +121,8 @@ public:
     int addCircle(const Part::GeomCircle &circle, bool fixed=false);
     /// add a ellipse
     int addEllipse(const Part::GeomEllipse &ellipse, bool fixed=false);
+    /// add an arc of hyperbola
+    int addArcOfHyperbola(const Part::GeomArcOfHyperbola &hyperbolaSegment, bool fixed=false);
     //@}
 
 

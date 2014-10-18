@@ -2900,8 +2900,10 @@ public:
             }
         }
         else if (Mode==STATUS_SEEK_Second) {
-            double rx0 = onSketchPos.fX - EditCurve[0].fX;
-            double ry0 = onSketchPos.fY - EditCurve[0].fY;
+            double rx0 = onSketchPos.fX - centerPoint.fX;
+            double ry0 = onSketchPos.fY - centerPoint.fY;
+            
+            EditCurve[1]= onSketchPos;
             /*for (int i=0; i < 16; i++) {
                 double angle = i*M_PI/16.0;
                 double rx = rx0 * cosh(angle) + ry0 * sinh(angle);
@@ -2909,10 +2911,10 @@ public:
                 EditCurve[1+i] = Base::Vector2D(EditCurve[0].fX + rx, EditCurve[0].fY + ry);
                 EditCurve[17+i] = Base::Vector2D(EditCurve[0].fX - rx, EditCurve[0].fY - ry);
             }*/
-            EditCurve[33] = EditCurve[1];
+            //EditCurve[33] = EditCurve[1];
 
             // Display radius for user
-            float radius = (onSketchPos - EditCurve[0]).Length();
+            float radius = (onSketchPos - centerPoint).Length();
 
             SbString text;
             text.sprintf(" (%.1fR,%.1fR)", radius,radius);
@@ -2927,29 +2929,31 @@ public:
         }
         else if (Mode==STATUS_SEEK_Third) {                       
             // angle between the major axis of the hyperbola and the X axis
-            double a = (EditCurve[1]-EditCurve[0]).Length();
-            double phi = atan2(EditCurve[1].fY-EditCurve[0].fY,EditCurve[1].fX-EditCurve[0].fX);
+            double a = (axisPoint-centerPoint).Length();
+            double phi = atan2(axisPoint.fY-centerPoint.fY,axisPoint.fX-centerPoint.fX);
             
             // This is the angle at cursor point
-            double angleatpoint = acosh((onSketchPos.fX-EditCurve[0].fX+(onSketchPos.fY-EditCurve[0].fY)*tan(phi))/(a*(cos(phi)+tan(phi)*sin(phi))));
-            double b=(onSketchPos.fY-EditCurve[0].fY-a*cosh(angleatpoint)*sin(phi))/(sinh(angleatpoint)*cos(phi));
-                        
-            for (int i=1; i < 16; i++) {
-                // P(U) = O + MajRad*Cosh(U)*XDir + MinRad*Sinh(U)*YDir
-                double angle = i*M_PI/16.0;
-                double rx = a * cosh(angle) * cos(phi) - b * sinh(angle) * sin(phi); 
-                double ry = a * cosh(angle) * sin(phi) + b * sinh(angle) * cos(phi);
-                EditCurve[1+i] = Base::Vector2D(EditCurve[0].fX + rx, EditCurve[0].fY + ry);
-                EditCurve[17+i] = Base::Vector2D(EditCurve[0].fX - rx, EditCurve[0].fY - ry);
+            double angleatpoint = acosh(((onSketchPos.fX-centerPoint.fX)*cos(phi)+(onSketchPos.fY-centerPoint.fY)*sin(phi))/a);
+            double b=(onSketchPos.fY-centerPoint.fY-a*cosh(angleatpoint)*sin(phi))/(sinh(angleatpoint)*cos(phi));
+            
+            if(!boost::math::isnan(b)){
+                for (int i=15; i >= 0; i--) {
+                    // P(U) = O + MajRad*Cosh(U)*XDir + MinRad*Sinh(U)*YDir
+                    double angle = i*M_PI/16.0;
+                    double rx = a * cosh(angle) * cos(phi) - b * sinh(angle) * sin(phi); 
+                    double ry = a * cosh(angle) * sin(phi) + b * sinh(angle) * cos(phi);
+                    EditCurve[17+i] = Base::Vector2D(centerPoint.fX + rx, centerPoint.fY + ry);
+                    EditCurve[i+1] = Base::Vector2D(centerPoint.fX + rx, centerPoint.fY - ry);
+                }
+                EditCurve[33] = EditCurve[32];
+                EditCurve[0] = EditCurve[1];
+            
+                // Display radius for user
+                SbString text;
+                text.sprintf(" (%.1fR,%.1fR)", a, b);
+                setPositionText(onSketchPos, text);
             }
-            EditCurve[33] = EditCurve[1];
-            EditCurve[17] = EditCurve[16];
-
-            // Display radius for user
-            SbString text;
-            text.sprintf(" (%.1fR,%.1fR)", a, b);
-            setPositionText(onSketchPos, text);
-
+            
             sketchgui->drawEdit(EditCurve);
             if (seekAutoConstraint(sugConstr3, onSketchPos, Base::Vector2D(0.f,0.f),
                                    AutoConstraint::CURVE)) {
@@ -2964,7 +2968,7 @@ public:
             double phi = atan2((axisPoint.fY-centerPoint.fY),(axisPoint.fX-centerPoint.fX));
             
             // This is the angle at cursor point
-            double angleatpoint = acosh((startingPoint.fX-centerPoint.fX+(startingPoint.fY-centerPoint.fY)*tan(phi))/(a*(cos(phi)+tan(phi)*sin(phi))));
+            double angleatpoint = acosh(((onSketchPos.fX-centerPoint.fX)*cos(phi)+(onSketchPos.fY-centerPoint.fY)*sin(phi))/a);
             double b=abs((startingPoint.fY-centerPoint.fY-a*cosh(angleatpoint)*sin(phi))/(sinh(angleatpoint)*cos(phi)));
             
             double rxs = startingPoint.fX - centerPoint.fX;
@@ -2976,21 +2980,21 @@ public:
             
             double angle2 = angle1 + (angle1 < 0. ? 2 : -2) * M_PI ;
             arcAngle = abs(angle1-arcAngle) < abs(angle2-arcAngle) ? angle1 : angle2;
-                                    
-            for (int i=0; i < 34; i++) {
-                double angle = startAngle+i*arcAngle/34.0;
-                double rx = a * cosh(angle) * cos(phi) - b * sinh(angle) * sin(phi); 
-                double ry = a * cosh(angle) * sin(phi) + b * sinh(angle) * cos(phi);
-                EditCurve[i] = Base::Vector2D(centerPoint.fX + rx, centerPoint.fY + ry);
+            
+            if(!boost::math::isnan(angle1) && !boost::math::isnan(angle2)){
+                
+                for (int i=0; i < 34; i++) {
+                    double angle = startAngle+i*arcAngle/34.0;
+                    double rx = a * cosh(angle) * cos(phi) - b * sinh(angle) * sin(phi); 
+                    double ry = a * cosh(angle) * sin(phi) + b * sinh(angle) * cos(phi);
+                    EditCurve[i] = Base::Vector2D(centerPoint.fX + rx, centerPoint.fY + ry);
+                }
+
+                // Display radii and angle for user
+                SbString text;
+                text.sprintf(" (%.1fR,%.1fR,%.1fdeg)", a, b, arcAngle * 180 / M_PI);
+                setPositionText(onSketchPos, text);
             }
-//             EditCurve[33] = EditCurve[1];
-//             EditCurve[17] = EditCurve[16];
-
-            // Display radii and angle for user
-            SbString text;
-            text.sprintf(" (%.1fR,%.1fR,%.1fdeg)", a, b, arcAngle * 180 / M_PI);
-            setPositionText(onSketchPos, text);
-
             sketchgui->drawEdit(EditCurve);
             if (seekAutoConstraint(sugConstr4, onSketchPos, Base::Vector2D(0.f,0.f),
                                    AutoConstraint::CURVE)) {
@@ -3041,7 +3045,7 @@ public:
             double phi = atan2((axisPoint.fY-centerPoint.fY),(axisPoint.fX-centerPoint.fX));
             
             // This is the angle at cursor point
-            double angleatpoint = acosh((startingPoint.fX-centerPoint.fX+(startingPoint.fY-centerPoint.fY)*tan(phi))/(a*(cos(phi)+tan(phi)*sin(phi))));
+            double angleatpoint = acosh(((onSketchPos.fX-centerPoint.fX)*cos(phi)+(onSketchPos.fY-centerPoint.fY)*sin(phi))/a);
             double b=abs((startingPoint.fY-centerPoint.fY-a*cosh(angleatpoint)*sin(phi))/(sinh(angleatpoint)*cos(phi)));
             
             double angle1 = atanh((a*((endPoint.fY - centerPoint.fY)*cos(phi)-(endPoint.fX - centerPoint.fX)*sin(phi)))/ 
@@ -3083,6 +3087,9 @@ public:
                 startAngle += M_PI/2;
             }
             
+            startAngle=M_PI/4;
+            endAngle=-M_PI/4;
+            
             Base::Vector3d center = Base::Vector3d(centerPoint.fX,centerPoint.fY,0);
             
             Base::Vector3d majorpositiveend = center + a * Base::Vector3d(cos(phi),sin(phi),0);
@@ -3110,7 +3117,7 @@ public:
                     majAxisPoint.fX, majAxisPoint.fY,                                    
                     minAxisPoint.fX, minAxisPoint.fY,
                     centerPoint.fX, centerPoint.fY,
-                    startAngle, endAngle);
+                    startAngle, endAngle); 
             /*
             currentgeoid++;
             

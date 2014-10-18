@@ -30,6 +30,7 @@
 # include <gp_Pln.hxx>
 # include <gp_Ax3.hxx>
 # include <gp_Circ.hxx>
+# include <gp_Hypr.hxx>
 # include <BRepAdaptor_Surface.hxx>
 # include <BRepAdaptor_Curve.hxx>
 # include <BRep_Tool.hxx>

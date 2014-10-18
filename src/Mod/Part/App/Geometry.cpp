@@ -96,6 +96,7 @@
 #include "BezierCurvePy.h"
 #include "BSplineCurvePy.h"
 #include "HyperbolaPy.h"
+#include "ArcOfHyperbolaPy.h"
 #include "OffsetCurvePy.h"
 #include "ParabolaPy.h"
 #include "BezierSurfacePy.h"
@@ -1420,7 +1421,7 @@ void GeomArcOfHyperbola::Restore(Base::XMLReader &reader)
 
 PyObject *GeomArcOfHyperbola::getPyObject(void)
 {
-    //return new ArcOfHyperbolaPy(static_cast<GeomArcOfHyperbola*>(this->clone()));
+    return new ArcOfHyperbolaPy(static_cast<GeomArcOfHyperbola*>(this->clone()));
 }
 // -------------------------------------------------
 
