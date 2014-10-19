@@ -2904,15 +2904,7 @@ public:
             double ry0 = onSketchPos.fY - centerPoint.fY;
             
             EditCurve[1]= onSketchPos;
-            /*for (int i=0; i < 16; i++) {
-                double angle = i*M_PI/16.0;
-                double rx = rx0 * cosh(angle) + ry0 * sinh(angle);
-                double ry = -rx0 * sinh(angle) + ry0 * cosh(angle);
-                EditCurve[1+i] = Base::Vector2D(EditCurve[0].fX + rx, EditCurve[0].fY + ry);
-                EditCurve[17+i] = Base::Vector2D(EditCurve[0].fX - rx, EditCurve[0].fY - ry);
-            }*/
-            //EditCurve[33] = EditCurve[1];
-
+            
             // Display radius for user
             float radius = (onSketchPos - centerPoint).Length();
 
@@ -2937,16 +2929,14 @@ public:
             double b=(onSketchPos.fY-centerPoint.fY-a*cosh(angleatpoint)*sin(phi))/(sinh(angleatpoint)*cos(phi));
             
             if(!boost::math::isnan(b)){
-                for (int i=15; i >= 0; i--) {
+                for (int i=15; i >= -15; i--) {
                     // P(U) = O + MajRad*Cosh(U)*XDir + MinRad*Sinh(U)*YDir
-                    double angle = i*M_PI/16.0;
+                    //double angle = i*M_PI/16.0;
+                    double angle=i*angleatpoint/15;
                     double rx = a * cosh(angle) * cos(phi) - b * sinh(angle) * sin(phi); 
                     double ry = a * cosh(angle) * sin(phi) + b * sinh(angle) * cos(phi);
-                    EditCurve[17+i] = Base::Vector2D(centerPoint.fX + rx, centerPoint.fY + ry);
-                    EditCurve[i+1] = Base::Vector2D(centerPoint.fX + rx, centerPoint.fY - ry);
+                    EditCurve[15+i] = Base::Vector2D(centerPoint.fX + rx, centerPoint.fY + ry);
                 }
-                EditCurve[33] = EditCurve[32];
-                EditCurve[0] = EditCurve[1];
             
                 // Display radius for user
                 SbString text;
@@ -2962,39 +2952,49 @@ public:
             }
         }
         else if (Mode==STATUS_SEEK_Fourth) {
-            
             // angle between the major axis of the hyperbola and the X axis
             double a = (axisPoint-centerPoint).Length();
-            double phi = atan2((axisPoint.fY-centerPoint.fY),(axisPoint.fX-centerPoint.fX));
+            double phi = atan2(axisPoint.fY-centerPoint.fY,axisPoint.fX-centerPoint.fX);
             
             // This is the angle at cursor point
-            double angleatpoint = acosh(((onSketchPos.fX-centerPoint.fX)*cos(phi)+(onSketchPos.fY-centerPoint.fY)*sin(phi))/a);
-            double b=abs((startingPoint.fY-centerPoint.fY-a*cosh(angleatpoint)*sin(phi))/(sinh(angleatpoint)*cos(phi)));
+            double angleatstartingpoint = acosh(((startingPoint.fX-centerPoint.fX)*cos(phi)+(startingPoint.fY-centerPoint.fY)*sin(phi))/a);
+            double b=(startingPoint.fY-centerPoint.fY-a*cosh(angleatstartingpoint)*sin(phi))/(sinh(angleatstartingpoint)*cos(phi));
             
-            double rxs = startingPoint.fX - centerPoint.fX;
-            double rys = startingPoint.fY - centerPoint.fY;
-            startAngle = atanh((a*(rys*cos(phi)-rxs*sin(phi)))/(b*(rxs*cos(phi)+rys*sin(phi)))); // eccentric anomaly angle
+            double startAngle = angleatstartingpoint;
             
-            double angle1 = atanh(a*((onSketchPos.fY - centerPoint.fY)*cos(phi)-(onSketchPos.fX - centerPoint.fX)*sin(phi))/ 
-                                  b*((onSketchPos.fX - centerPoint.fX)*cos(phi)+(onSketchPos.fY - centerPoint.fY)*sin(phi)))- startAngle;
+            //double angleatpoint = acosh(((onSketchPos.fX-centerPoint.fX)*cos(phi)+(onSketchPos.fY-centerPoint.fY)*sin(phi))/a);
+            
+            double angleatpoint = atanh( (((onSketchPos.fY-centerPoint.fY)*cos(phi)-(onSketchPos.fX-centerPoint.fX)*sin(phi))*a) /
+                                         (((onSketchPos.fX-centerPoint.fX)*cos(phi)+(onSketchPos.fY-centerPoint.fY)*sin(phi))*b)  );
+            
+            /*double angle1 = angleatpoint - startAngle;
             
             double angle2 = angle1 + (angle1 < 0. ? 2 : -2) * M_PI ;
-            arcAngle = abs(angle1-arcAngle) < abs(angle2-arcAngle) ? angle1 : angle2;
+            arcAngle = abs(angle1-arcAngle) < abs(angle2-arcAngle) ? angle1 : angle2;*/
             
-            if(!boost::math::isnan(angle1) && !boost::math::isnan(angle2)){
-                
-                for (int i=0; i < 34; i++) {
-                    double angle = startAngle+i*arcAngle/34.0;
+            arcAngle = angleatpoint - startAngle;
+            
+            //if(!boost::math::isnan(angle1) && !boost::math::isnan(angle2)){
+            if(!boost::math::isnan(arcAngle)){                
+                for (int i=0; i < 33; i++) {
+                    // P(U) = O + MajRad*Cosh(U)*XDir + MinRad*Sinh(U)*YDir
+                    //double angle=i*angleatpoint/16;
+                    double angle = startAngle+i*arcAngle/32.0;
                     double rx = a * cosh(angle) * cos(phi) - b * sinh(angle) * sin(phi); 
                     double ry = a * cosh(angle) * sin(phi) + b * sinh(angle) * cos(phi);
                     EditCurve[i] = Base::Vector2D(centerPoint.fX + rx, centerPoint.fY + ry);
                 }
-
-                // Display radii and angle for user
+            
+                // Display radius for user
                 SbString text;
-                text.sprintf(" (%.1fR,%.1fR,%.1fdeg)", a, b, arcAngle * 180 / M_PI);
+                text.sprintf(" (%.1fR,%.1fR)", a, b);
                 setPositionText(onSketchPos, text);
             }
+            else
+            {
+                arcAngle=0.;
+            }
+            
             sketchgui->drawEdit(EditCurve);
             if (seekAutoConstraint(sugConstr4, onSketchPos, Base::Vector2D(0.f,0.f),
                                    AutoConstraint::CURVE)) {
@@ -3013,11 +3013,13 @@ public:
         if (Mode==STATUS_SEEK_First){
             EditCurve[0] = onSketchPos;
             centerPoint = onSketchPos;
+            EditCurve.resize(2);
             Mode = STATUS_SEEK_Second;
         } 
         else if(Mode==STATUS_SEEK_Second) {
             EditCurve[1] = onSketchPos;
             axisPoint = onSketchPos;
+            EditCurve.resize(31);
             Mode = STATUS_SEEK_Third;
         }
         else if(Mode==STATUS_SEEK_Third) {
@@ -3039,27 +3041,24 @@ public:
         if (Mode==STATUS_Close) {
             unsetCursor();
             resetPositionText();
+                       
             
-            double a = (axisPoint-centerPoint).Length();
             // angle between the major axis of the hyperbola and the X axis
-            double phi = atan2((axisPoint.fY-centerPoint.fY),(axisPoint.fX-centerPoint.fX));
+            double a = (axisPoint-centerPoint).Length();
+            double phi = atan2(axisPoint.fY-centerPoint.fY,axisPoint.fX-centerPoint.fX);
             
             // This is the angle at cursor point
-            double angleatpoint = acosh(((onSketchPos.fX-centerPoint.fX)*cos(phi)+(onSketchPos.fY-centerPoint.fY)*sin(phi))/a);
-            double b=abs((startingPoint.fY-centerPoint.fY-a*cosh(angleatpoint)*sin(phi))/(sinh(angleatpoint)*cos(phi)));
+            double angleatstartingpoint = acosh(((startingPoint.fX-centerPoint.fX)*cos(phi)+(startingPoint.fY-centerPoint.fY)*sin(phi))/a);
+            double b=(startingPoint.fY-centerPoint.fY-a*cosh(angleatstartingpoint)*sin(phi))/(sinh(angleatstartingpoint)*cos(phi));
             
-            double angle1 = atanh((a*((endPoint.fY - centerPoint.fY)*cos(phi)-(endPoint.fX - centerPoint.fX)*sin(phi)))/ 
-                                  (b*((endPoint.fX - centerPoint.fX)*cos(phi)+(endPoint.fY - centerPoint.fY)*sin(phi))))- startAngle;
+            double startAngle = angleatstartingpoint;
             
-            double angle2 = angle1 + (angle1 < 0. ? 2 : -2) * M_PI ;
-            arcAngle = abs(angle1-arcAngle) < abs(angle2-arcAngle) ? angle1 : angle2;
+            //double angleatpoint = acosh(((onSketchPos.fX-centerPoint.fX)*cos(phi)+(onSketchPos.fY-centerPoint.fY)*sin(phi))/a);
             
-            if (arcAngle > 0)
-                endAngle = startAngle + arcAngle;
-            else {
-                endAngle = startAngle;
-                startAngle += arcAngle;
-            }
+            double endAngle = atanh( (((endPoint.fY-centerPoint.fY)*cos(phi)-(endPoint.fX-centerPoint.fX)*sin(phi))*a) /
+                                         (((endPoint.fX-centerPoint.fX)*cos(phi)+(endPoint.fY-centerPoint.fY)*sin(phi))*b)  );
+            
+            
             
             Base::Vector2D majAxisDir,minAxisDir,minAxisPoint,majAxisPoint;
             // We always create a CCW ellipse, because we want our XY reference system to be in the +X +Y direction
@@ -3087,14 +3086,14 @@ public:
                 startAngle += M_PI/2;
             }
             
-            startAngle=M_PI/4;
-            endAngle=-M_PI/4;
-            majAxisPoint.fX=20;
+            /*startAngle=M_PI/4;
+            endAngle=-M_PI/4;*/
+            /*majAxisPoint.fX=20;
             majAxisPoint.fY=0;
             minAxisPoint.fX=0;
             minAxisPoint.fY=10;
             centerPoint.fX=0;
-            centerPoint.fY=0;
+            centerPoint.fY=0;*/
             
             
             Base::Vector3d center = Base::Vector3d(centerPoint.fX,centerPoint.fY,0);
