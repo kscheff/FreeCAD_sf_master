@@ -1167,7 +1167,8 @@ TYPESYSTEM_SOURCE(Part::GeomArcOfHyperbola,Part::GeomCurve);
 
 GeomArcOfHyperbola::GeomArcOfHyperbola()
 {
-    Handle_Geom_Hyperbola h = new Geom_Hyperbola(gp_Hypr());
+    gp_Ax2 ax2 = gp_Ax2();
+    Handle_Geom_Hyperbola h = new Geom_Hyperbola(gp_Hypr(ax2, 1,1));
     this->myCurve = new Geom_TrimmedCurve(h, h->FirstParameter(),h->LastParameter());
 }
 
