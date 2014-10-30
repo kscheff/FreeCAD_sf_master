@@ -2553,7 +2553,7 @@ CmdSketcherCreateEllipseBy3Points::CmdSketcherCreateEllipseBy3Points()
     sToolTipText    = QT_TR_NOOP("Create an ellipse by 3 points in the sketch");
     sWhatsThis      = sToolTipText;
     sStatusTip      = sToolTipText;
-    sPixmap         = "Sketcher_Conics_Ellipse_3points";
+    sPixmap         = "Sketcher_CreateEllipse_3points";
     eType           = ForEdit;
 }
 
@@ -2996,7 +2996,7 @@ Gui::Action * CmdSketcherCompCreateConic::createAction(void)
     ellipseByCenter->setIcon(Gui::BitmapFactory().pixmapFromSvg("Sketcher_CreateEllipse", QSize(24,24)));
      /// @todo replace with correct icon
     QAction* ellipseBy3Points = pcAction->addAction(QString());
-    ellipseBy3Points->setIcon(Gui::BitmapFactory().pixmapFromSvg("Sketcher_Conics_Ellipse_3points", QSize(24,24)));
+    ellipseBy3Points->setIcon(Gui::BitmapFactory().pixmapFromSvg("Sketcher_CreateEllipse_3points", QSize(24,24)));
     
     QAction* arcofellipse = pcAction->addAction(QString());
     arcofellipse->setIcon(Gui::BitmapFactory().pixmapFromSvg("Sketcher_Elliptical_Arc", QSize(24,24)));
