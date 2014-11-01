@@ -27,6 +27,14 @@
 
 namespace GCS
 {
+    ///////////////////////////////////////
+    // BFGS Solver parameters
+    ///////////////////////////////////////
+    #define XconvergenceRough 1e-8
+    #define XconvergenceFine  1e-10
+    #define smallF            1e-20
+    #define MaxIterations     100 //Note that the total number of iterations allowed is MaxIterations *xLength
+
 
     ///////////////////////////////////////
     // Solver
@@ -109,6 +117,8 @@ namespace GCS
         int addConstraintL2LAngle(Line &l1, Line &l2, double *angle, int tagId=0);
         int addConstraintL2LAngle(Point &l1p1, Point &l1p2, Point &l2p1, Point &l2p2,
                                   double *angle, int tagId=0);
+        int addConstraintAngleViaPoint(Curve &crv1, Curve &crv2, Point &p,
+                                  double *angle, int tagId=0);
         int addConstraintMidpointOnLine(Line &l1, Line &l2, int tagId=0);
         int addConstraintMidpointOnLine(Point &l1p1, Point &l1p2, Point &l2p1, Point &l2p2,
                                         int tagId=0);
@@ -183,6 +193,15 @@ namespace GCS
         int addConstraintInternalAlignmentEllipseMinorDiameter(ArcOfEllipse &a, Point &p1, Point &p2, int tagId=0);
         int addConstraintInternalAlignmentEllipseFocus1(ArcOfEllipse &a, Point &p1, int tagId=0);
         int addConstraintInternalAlignmentEllipseFocus2(ArcOfEllipse &a, Point &p1, int tagId=0);
+
+        double calculateAngleViaPoint(Curve &crv1, Curve &crv2, Point &p);
+
+        // Calculates errors of all constraints which have a tag equal to
+        // the one supplied. Individual errors are summed up using RMS.
+        // If none are found, NAN is returned
+        // If there's only one, a signed value is returned.
+        // Effectively, it calculates the error of a UI constraint
+        double calculateConstraintErrorByTag(int tagId);
         
         void rescaleConstraint(int id, double coeff);
 
@@ -197,6 +216,8 @@ namespace GCS
         void applySolution();
         void undoSolution();
 
+        double getFinePrecision(){ return XconvergenceFine;}//FIXME: looks like XconvergenceFine is not the solver precision, at least in DogLeg slover.
+
         int diagnose();
         int dofsNumber() { return hasDiagnosis ? dofs : -1; }
         void getConflicting(VEC_I &conflictingOut) const
@@ -205,13 +226,6 @@ namespace GCS
           { redundantOut = hasDiagnosis ? redundantTags : VEC_I(0); }
     };
 
-    ///////////////////////////////////////
-    // BFGS Solver parameters
-    ///////////////////////////////////////
-    #define XconvergenceRough 1e-8
-    #define XconvergenceFine  1e-10
-    #define smallF            1e-20
-    #define MaxIterations     100 //Note that the total number of iterations allowed is MaxIterations *xLength
 
     ///////////////////////////////////////
     // Helper elements
