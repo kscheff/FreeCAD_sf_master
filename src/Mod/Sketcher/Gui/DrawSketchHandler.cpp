@@ -35,6 +35,7 @@
 #include <Base/Console.h>
 #include <Base/Exception.h>
 #include <Base/Interpreter.h>
+#include <Base/Tools.h>
 #include <Gui/Application.h>
 #include <Gui/BitmapFactory.h>
 #include <Gui/Command.h>
@@ -49,6 +50,7 @@
 
 #include "DrawSketchHandler.h"
 #include "ViewProviderSketch.h"
+#include "CommandConstraints.h"
 
 
 using namespace SketcherGui;
@@ -297,7 +299,52 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint> &suggested
                     tangDeviation = projDist;
                 }
             }
-        } 
+        } else if ((*it)->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId()) {
+            const Part::GeomArcOfEllipse *aoe = dynamic_cast<const Part::GeomArcOfEllipse *>((*it));
+
+            Base::Vector3d center = aoe->getCenter();
+
+            double a = aoe->getMajorRadius();
+            double b = aoe->getMinorRadius();
+            double phi = aoe->getAngleXU();
+            
+            double cf = sqrt(a*a - b*b);
+                
+            Base::Vector3d focus1P = center + cf * Base::Vector3d(cos(phi),sin(phi),0);
+            Base::Vector3d focus2P = center - cf * Base::Vector3d(cos(phi),sin(phi),0);
+            
+            Base::Vector3d norm = Base::Vector3d(Dir.fY,-Dir.fX).Normalize();
+            
+            double distancetoline = norm*(tmpPos - focus1P); // distance focus1 to line
+                        
+            Base::Vector3d focus1PMirrored = focus1P + 2*distancetoline*norm; // mirror of focus1 with respect to the line
+            
+            double error = abs((focus1PMirrored-focus2P).Length() - 2*a);
+            
+            if ( error< tangDeviation ) {
+                    tangId = i;
+                    tangDeviation = error;
+            }
+
+            if (error < tangDeviation) {
+                double startAngle, endAngle;
+                aoe->getRange(startAngle, endAngle);
+                
+                double angle = Base::fmod(
+                    atan2(-aoe->getMajorRadius()*((tmpPos.x-center.x)*sin(aoe->getAngleXU())-(tmpPos.y-center.y)*cos(aoe->getAngleXU())),
+                                aoe->getMinorRadius()*((tmpPos.x-center.x)*cos(aoe->getAngleXU())+(tmpPos.y-center.y)*sin(aoe->getAngleXU()))
+                    )- startAngle, 2.f*M_PI); 
+                
+                while(angle < startAngle)
+                    angle += 2*D_PI;         // Bring it to range of arc
+
+                // if the point is on correct side of arc
+                if (angle <= endAngle) {     // Now need to check only one side
+                    tangId = i;
+                    tangDeviation = error;
+                }
+            }
+        }
     }
 
     if (tangId != Constraint::GeoUndef) {
@@ -364,6 +411,58 @@ void DrawSketchHandler::createAutoConstraints(const std::vector<AutoConstraint> 
                                        );
                 } break;
             case Sketcher::Tangent: {
+                Sketcher::SketchObject* Obj = dynamic_cast<Sketcher::SketchObject*>(sketchgui->getObject());
+                
+                const Part::Geometry *geom1 = Obj->getGeometry(geoId1);
+                const Part::Geometry *geom2 = Obj->getGeometry(it->GeoId);
+                
+                int geoId2 = it->GeoId;
+                
+                // ellipse tangency support using construction elements (lines)
+                if( geom1 && geom2 && 
+                    ( geom1->getTypeId() == Part::GeomEllipse::getClassTypeId() ||
+                    geom2->getTypeId() == Part::GeomEllipse::getClassTypeId() )){
+                    
+                    if(geom1->getTypeId() != Part::GeomEllipse::getClassTypeId())
+                        std::swap(geoId1,geoId2);
+            
+                    // geoId1 is the ellipse
+                    geom1 = Obj->getGeometry(geoId1);
+                    geom2 = Obj->getGeometry(geoId2);                
+            
+                    if( geom2->getTypeId() == Part::GeomEllipse::getClassTypeId() ||
+                        geom2->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ||
+                        geom2->getTypeId() == Part::GeomCircle::getClassTypeId() ||
+                        geom2->getTypeId() == Part::GeomArcOfCircle::getClassTypeId() ) {
+                        // in all these cases an intermediate element is needed
+                        makeTangentToEllipseviaConstructionLine(Obj,geom1,geom2,geoId1,geoId2);
+                        return;
+                    }
+                }
+                
+                // arc of ellipse tangency support using external elements
+                if( geom1 && geom2 && 
+                    ( geom1->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ||
+                    geom2->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() )){
+                    
+                    if(geom1->getTypeId() != Part::GeomArcOfEllipse::getClassTypeId())
+                        std::swap(geoId1,geoId2);
+            
+                    // geoId1 is the arc of ellipse
+                    geom1 = Obj->getGeometry(geoId1);
+                    geom2 = Obj->getGeometry(geoId2);                
+            
+                    if( geom2->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ||
+                        geom2->getTypeId() == Part::GeomCircle::getClassTypeId() ||
+                        geom2->getTypeId() == Part::GeomArcOfCircle::getClassTypeId() ) {
+                        // in all these cases an intermediate element is needed
+                        // TODO: INSERT COMMON CODE HERE
+                               // in all these cases an intermediate element is needed
+                        makeTangentToArcOfEllipseviaConstructionLine(Obj,geom1,geom2,geoId1,geoId2);
+                        return;
+                    }
+                }
+            
                 Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%i, %i)) "
                                         ,sketchgui->getObject()->getNameInDocument()
                                         ,geoId1, it->GeoId
