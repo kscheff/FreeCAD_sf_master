@@ -1374,6 +1374,9 @@ void CmdSketcherConstrainPerpendicular::activated(int iMsg)
                     PoE.x,PoE.y,endpoint.x,endpoint.y); 
                 
                 Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.toggleConstruction(%d) ",Obj->getNameInDocument(),currentgeoid+1);
+                
+                Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Distance',%d,%f)) ",
+                        selection[0].getFeatName(),currentgeoid+1,direction.Length());
                     
                 // Point on first object (ellipse, arc of ellipse)
                 Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
@@ -1537,6 +1540,9 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                         PoE.x,PoE.y,endpoint.x,endpoint.y); // create line for major axis
                     
                     Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.toggleConstruction(%d) ",Obj->getNameInDocument(),currentgeoid+1);
+                    
+                    Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Distance',%d,%f)) ",
+                        selection[0].getFeatName(),currentgeoid+1,direction.Length());
                         
                     // Point on first object
                     Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
@@ -1560,9 +1566,7 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                     Gui::Command::updateActive();
                     return;
                 }
-            
-            
-                
+
                 commitCommand();
                 updateActive();
                 getSelection().clearSelection();
@@ -1655,18 +1659,16 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                 
                 openCommand("add tangent constraint");
                 
-                try {
-                    //construct the point
-                    /*Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Point(App.Vector(%f,%f,0)))",
-                        Obj->getNameInDocument(),
-                        PoE.x,PoE.y);*/
-                    
+                try {                    
                     // Add a construction line
                     Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
                         selection[0].getFeatName(),
                         PoE.x,PoE.y,endpoint.x,endpoint.y); // create line for major axis
                     
                     Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.toggleConstruction(%d) ",Obj->getNameInDocument(),currentgeoid+1);
+                    
+                    Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Distance',%d,%f)) ",
+                        selection[0].getFeatName(),currentgeoid+1,direction.Length());
                         
                     // Point on first object
                     Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
@@ -1690,9 +1692,7 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                     Gui::Command::updateActive();
                     return;
                 }
-            
-            
-                
+
                 commitCommand();
                 updateActive();
                 getSelection().clearSelection();
@@ -1754,6 +1754,9 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                         PoE.x,PoE.y,endpoint.x,endpoint.y); // create line for major axis
                     
                     Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.toggleConstruction(%d) ",Obj->getNameInDocument(),currentgeoid+1);
+                    
+                    Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Distance',%d,%f)) ",
+                        selection[0].getFeatName(),currentgeoid+1,direction.Length());
                         
                     // Point on first object
                     Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
