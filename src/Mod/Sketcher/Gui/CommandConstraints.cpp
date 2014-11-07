@@ -1977,7 +1977,9 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
     Sketcher::SketchObject* Obj = dynamic_cast<Sketcher::SketchObject*>(selection[0].getObject());
 
     if (SubNames.size() < 1 || SubNames.size() > 3) {
-        goto MessageAndExit;
+        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
+        QObject::tr("Select one or two lines from the sketch. Or select two edges and a point."));
+        return;
     }
 
 
@@ -2133,7 +2135,6 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
         }
     };
 
-MessageAndExit:
     QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
         QObject::tr("Select one or two lines from the sketch. Or select two edges and a point."));
     return;
