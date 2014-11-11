@@ -1912,7 +1912,8 @@ public:
         if (method == PERIAPSIS_APOAPSIS_B) {
             if (mode == STATUS_SEEK_PERIAPSIS) {
                 setPositionText(onSketchPos);
-                if (seekAutoConstraint(sugConstr1, onSketchPos, Base::Vector2D(0.f,0.f))) { // TODO: ellipse prio 1
+                if (seekAutoConstraint(sugConstr1, onSketchPos, Base::Vector2D(0.f,0.f),
+                    AutoConstraint::CURVE)) { 
                     renderSuggestConstraintsCursor(sugConstr1);
                     return;
                 }
@@ -1929,6 +1930,11 @@ public:
                 sketchgui->drawEdit(editCurve);
                 // Suggestions for ellipse and curves are disabled because many tangent constraints
                 // need an intermediate point or line.
+                if (seekAutoConstraint(sugConstr2, onSketchPos, Base::Vector2D(0.f,0.f),
+                    AutoConstraint::CURVE)) {
+                    renderSuggestConstraintsCursor(sugConstr2);
+                    return;
+                }
             } else if (mode == STATUS_SEEK_B) {
                 solveEllipse(onSketchPos);
                 approximateEllipse();
@@ -1939,6 +1945,11 @@ public:
                 setPositionText(onSketchPos, text);
 
                 sketchgui->drawEdit(editCurve);
+                if (seekAutoConstraint(sugConstr3, onSketchPos, Base::Vector2D(0.f,0.f),
+                    AutoConstraint::CURVE)) {
+                    renderSuggestConstraintsCursor(sugConstr3);
+                    return;
+                }
             }
         } else { // method is CENTER_PERIAPSIS_B
             if (mode == STATUS_SEEK_CENTROID) {
@@ -1958,6 +1969,11 @@ public:
                 setPositionText(onSketchPos, text);
 
                 sketchgui->drawEdit(editCurve);
+                if (seekAutoConstraint(sugConstr2, onSketchPos, Base::Vector2D(0.f,0.f),
+                    AutoConstraint::CURVE)) {
+                    renderSuggestConstraintsCursor(sugConstr2);
+                    return;
+                }
             } else if ((mode == STATUS_SEEK_A) || (mode == STATUS_SEEK_B)) {
                 solveEllipse(onSketchPos);
                 approximateEllipse();
@@ -1968,6 +1984,11 @@ public:
                 setPositionText(onSketchPos, text);
 
                 sketchgui->drawEdit(editCurve);
+                if (seekAutoConstraint(sugConstr3, onSketchPos, Base::Vector2D(0.f,0.f),
+                    AutoConstraint::CURVE)) {
+                    renderSuggestConstraintsCursor(sugConstr3);
+                    return;
+                }
             }
         }
         applyCursor();
@@ -2021,7 +2042,7 @@ public:
         return true;
     }
 protected:
-    std::vector<AutoConstraint> sugConstr1;
+    std::vector<AutoConstraint> sugConstr1, sugConstr2, sugConstr3;
 private:
     SelectMode mode;
     /// the method of constructing the ellipse
@@ -2494,6 +2515,29 @@ private:
             if (sugConstr1.size() > 0) {
                 createAutoConstraints(sugConstr1, currentgeoid, Sketcher::mid);
                 sugConstr1.clear();
+            }
+            if (sugConstr2.size() > 0) {
+                createAutoConstraints(sugConstr2, currentgeoid, Sketcher::none);
+                sugConstr2.clear();
+            }
+            if (sugConstr3.size() > 0) {
+                createAutoConstraints(sugConstr3, currentgeoid, Sketcher::none);
+                sugConstr3.clear();
+            }
+        }
+        
+        if (method == PERIAPSIS_APOAPSIS_B) {
+            if (sugConstr1.size() > 0) {
+                createAutoConstraints(sugConstr1, currentgeoid, Sketcher::none);
+                sugConstr1.clear();
+            }            
+            if (sugConstr2.size() > 0) {
+                createAutoConstraints(sugConstr2, currentgeoid, Sketcher::none);
+                sugConstr2.clear();
+            }
+            if (sugConstr3.size() > 0) {
+                createAutoConstraints(sugConstr3, currentgeoid, Sketcher::none);
+                sugConstr3.clear();
             }
         }
 

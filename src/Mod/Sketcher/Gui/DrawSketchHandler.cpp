@@ -49,6 +49,7 @@
 
 #include "DrawSketchHandler.h"
 #include "ViewProviderSketch.h"
+#include "CommandConstraints.h"
 
 
 using namespace SketcherGui;
@@ -364,6 +365,58 @@ void DrawSketchHandler::createAutoConstraints(const std::vector<AutoConstraint> 
                                        );
                 } break;
             case Sketcher::Tangent: {
+                Sketcher::SketchObject* Obj = dynamic_cast<Sketcher::SketchObject*>(sketchgui->getObject());
+                
+                const Part::Geometry *geom1 = Obj->getGeometry(geoId1);
+                const Part::Geometry *geom2 = Obj->getGeometry(it->GeoId);
+                
+                int geoId2 = it->GeoId;
+                
+                // ellipse tangency support using construction elements (lines)
+                if( geom1 && geom2 && 
+                    ( geom1->getTypeId() == Part::GeomEllipse::getClassTypeId() ||
+                    geom2->getTypeId() == Part::GeomEllipse::getClassTypeId() )){
+                    
+                    if(geom1->getTypeId() != Part::GeomEllipse::getClassTypeId())
+                        std::swap(geoId1,geoId2);
+            
+                    // geoId1 is the ellipse
+                    geom1 = Obj->getGeometry(geoId1);
+                    geom2 = Obj->getGeometry(geoId2);                
+            
+                    if( geom2->getTypeId() == Part::GeomEllipse::getClassTypeId() ||
+                        geom2->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ||
+                        geom2->getTypeId() == Part::GeomCircle::getClassTypeId() ||
+                        geom2->getTypeId() == Part::GeomArcOfCircle::getClassTypeId() ) {
+                        // in all these cases an intermediate element is needed
+                        makeTangentToEllipseviaConstructionLine(Obj,geom1,geom2,geoId1,geoId2);
+                        return;
+                    }
+                }
+                
+                // arc of ellipse tangency support using external elements
+                if( geom1 && geom2 && 
+                    ( geom1->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ||
+                    geom2->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() )){
+                    
+                    if(geom1->getTypeId() != Part::GeomArcOfEllipse::getClassTypeId())
+                        std::swap(geoId1,geoId2);
+            
+                    // geoId1 is the arc of ellipse
+                    geom1 = Obj->getGeometry(geoId1);
+                    geom2 = Obj->getGeometry(geoId2);                
+            
+                    if( geom2->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ||
+                        geom2->getTypeId() == Part::GeomCircle::getClassTypeId() ||
+                        geom2->getTypeId() == Part::GeomArcOfCircle::getClassTypeId() ) {
+                        // in all these cases an intermediate element is needed
+                        // TODO: INSERT COMMON CODE HERE
+                               // in all these cases an intermediate element is needed
+                        makeTangentToArcOfEllipseviaConstructionLine(Obj,geom1,geom2,geoId1,geoId2);
+                        return;
+                    }
+                }
+            
                 Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%i, %i)) "
                                         ,sketchgui->getObject()->getNameInDocument()
                                         ,geoId1, it->GeoId
