@@ -2724,8 +2724,7 @@ public:
             setPositionText(onSketchPos, text);
 
             sketchgui->drawEdit(EditCurve);
-            if (seekAutoConstraint(sugConstr3, onSketchPos, Base::Vector2D(0.f,0.f),
-                                   AutoConstraint::CURVE)) {
+            if (seekAutoConstraint(sugConstr3, onSketchPos, Base::Vector2D(0.f,0.f))) {
                 renderSuggestConstraintsCursor(sugConstr3);
                 return;
             }
@@ -2764,8 +2763,7 @@ public:
             setPositionText(onSketchPos, text);
 
             sketchgui->drawEdit(EditCurve);
-            if (seekAutoConstraint(sugConstr4, onSketchPos, Base::Vector2D(0.f,0.f),
-                                   AutoConstraint::CURVE)) {
+            if (seekAutoConstraint(sugConstr4, onSketchPos, Base::Vector2D(0.f,0.f))) {
                 renderSuggestConstraintsCursor(sugConstr4);
                 return;
             }
@@ -2891,14 +2889,26 @@ public:
             
             // add auto constraints for the center point
             if (sugConstr1.size() > 0) {
-                createAutoConstraints(sugConstr1, getHighestCurveIndex(), Sketcher::mid);
+                createAutoConstraints(sugConstr1, currentgeoid, Sketcher::mid);
                 sugConstr1.clear();
             }
 
-            // add suggested constraints for circumference
+            // add suggested constraints for arc
             if (sugConstr2.size() > 0) {
-                //createAutoConstraints(sugConstr2, getHighestCurveIndex(), Sketcher::none);
+                createAutoConstraints(sugConstr2, currentgeoid, Sketcher::none);
                 sugConstr2.clear();
+            }
+            
+            // add suggested constraints for start of arc
+            if (sugConstr3.size() > 0) {
+                createAutoConstraints(sugConstr3, currentgeoid, Sketcher::start);
+                sugConstr3.clear();
+            }
+            
+            // add suggested constraints for start of arc
+            if (sugConstr4.size() > 0) {
+                createAutoConstraints(sugConstr4, currentgeoid, Sketcher::end);
+                sugConstr4.clear();
             }
 
             EditCurve.clear();

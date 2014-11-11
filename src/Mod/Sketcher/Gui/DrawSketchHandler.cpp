@@ -35,6 +35,7 @@
 #include <Base/Console.h>
 #include <Base/Exception.h>
 #include <Base/Interpreter.h>
+#include <Base/Tools.h>
 #include <Gui/Application.h>
 #include <Gui/BitmapFactory.h>
 #include <Gui/Command.h>
@@ -298,7 +299,52 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint> &suggested
                     tangDeviation = projDist;
                 }
             }
-        } 
+        } else if ((*it)->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId()) {
+            const Part::GeomArcOfEllipse *aoe = dynamic_cast<const Part::GeomArcOfEllipse *>((*it));
+
+            Base::Vector3d center = aoe->getCenter();
+
+            double a = aoe->getMajorRadius();
+            double b = aoe->getMinorRadius();
+            double phi = aoe->getAngleXU();
+            
+            double cf = sqrt(a*a - b*b);
+                
+            Base::Vector3d focus1P = center + cf * Base::Vector3d(cos(phi),sin(phi),0);
+            Base::Vector3d focus2P = center - cf * Base::Vector3d(cos(phi),sin(phi),0);
+            
+            Base::Vector3d norm = Base::Vector3d(Dir.fY,-Dir.fX).Normalize();
+            
+            double distancetoline = norm*(tmpPos - focus1P); // distance focus1 to line
+                        
+            Base::Vector3d focus1PMirrored = focus1P + 2*distancetoline*norm; // mirror of focus1 with respect to the line
+            
+            double error = abs((focus1PMirrored-focus2P).Length() - 2*a);
+            
+            if ( error< tangDeviation ) {
+                    tangId = i;
+                    tangDeviation = error;
+            }
+
+            if (error < tangDeviation) {
+                double startAngle, endAngle;
+                aoe->getRange(startAngle, endAngle);
+                
+                double angle = Base::fmod(
+                    atan2(-aoe->getMajorRadius()*((tmpPos.x-center.x)*sin(aoe->getAngleXU())-(tmpPos.y-center.y)*cos(aoe->getAngleXU())),
+                                aoe->getMinorRadius()*((tmpPos.x-center.x)*cos(aoe->getAngleXU())+(tmpPos.y-center.y)*sin(aoe->getAngleXU()))
+                    )- startAngle, 2.f*M_PI); 
+                
+                while(angle < startAngle)
+                    angle += 2*D_PI;         // Bring it to range of arc
+
+                // if the point is on correct side of arc
+                if (angle <= endAngle) {     // Now need to check only one side
+                    tangId = i;
+                    tangDeviation = error;
+                }
+            }
+        }
     }
 
     if (tangId != Constraint::GeoUndef) {
