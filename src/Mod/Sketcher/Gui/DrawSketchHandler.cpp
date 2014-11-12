@@ -140,6 +140,8 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint> &suggested
     if (!sketchgui->Autoconstraints.getValue())
         return 0; // If Autoconstraints property is not set quit
 
+    Base::Vector3d hitShapeDir = Base::Vector3d(0,0,0); // direction of hit shape (if it is a line, the direction of the line)
+        
     // Get Preselection
     int preSelPnt = sketchgui->getPreselectPoint();
     int preSelCrv = sketchgui->getPreselectCurve();
@@ -148,16 +150,29 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint> &suggested
     Sketcher::PointPos PosId = Sketcher::none;
     if (preSelPnt != -1)
         sketchgui->getSketchObject()->getGeoVertexIndex(preSelPnt, GeoId, PosId);
-    else if (preSelCrv != -1)
+    else if (preSelCrv != -1){
         GeoId = preSelCrv;
+        const Part::Geometry *geom = sketchgui->getSketchObject()->getGeometry(GeoId);
+        
+        if(geom->getTypeId() == Part::GeomLineSegment::getClassTypeId()){
+            const Part::GeomLineSegment *line = static_cast<const Part::GeomLineSegment *>(geom);
+            hitShapeDir= line->getEndPoint()-line->getStartPoint();     
+        }
+            
+    }
     else if (preSelCrs == 0) { // root point
         GeoId = -1;
         PosId = Sketcher::start;
     }
-    else if (preSelCrs == 1) // x axis
+    else if (preSelCrs == 1){ // x axis
         GeoId = -1;
-    else if (preSelCrs == 2) // y axis
+        hitShapeDir = Base::Vector3d(1,0,0);
+        
+    }
+    else if (preSelCrs == 2){ // y axis
         GeoId = -2;
+        hitShapeDir = Base::Vector3d(0,1,0);
+    }
 
     if (GeoId != Constraint::GeoUndef) {
         // Currently only considers objects in current Sketcher
@@ -173,12 +188,25 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint> &suggested
             constr.Type = Sketcher::PointOnObject;
         else if (type == AutoConstraint::CURVE && PosId == Sketcher::none)
             constr.Type = Sketcher::Tangent;
+        
+        if(constr.Type == Sketcher::Tangent && Dir.Length() > 1e-8 && hitShapeDir.Length() > 1e-8) { // We are hitting a line and have hitting vector information
+            Base::Vector3d dir3d = Base::Vector3d(Dir.fX,Dir.fY,0);
+            double cosangle=dir3d.Normalize()*hitShapeDir.Normalize();
+            
+            // the angle between the line and the hitting direction are over around 6 degrees (it is substantially parallel)
+            // or if it is an sketch axis (that can not move to accomodate to the shape), then only if it is around 6 degrees with the normal (around 84 degrees)
+            if(abs(cosangle) < 0.995f || ((GeoId==-1 || GeoId==-2) && abs(cosangle) < 0.1))  
+                suggestedConstraints.push_back(constr);
+            
+            
+            return suggestedConstraints.size();
+        }
 
         if (constr.Type != Sketcher::None)
             suggestedConstraints.push_back(constr);
     }
-
-    if (Dir.Length() < 1e-8)
+        
+    if (Dir.Length() < 1e-8 || type == AutoConstraint::CURVE)
         // Direction not set so return;
         return suggestedConstraints.size();
 
@@ -265,8 +293,8 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint> &suggested
             Base::Vector3d focus1PMirrored = focus1P + 2*distancetoline*norm; // mirror of focus1 with respect to the line
             
             double error = abs((focus1PMirrored-focus2P).Length() - 2*a);
-
-            if ( error< tangDeviation ) {
+            
+            if ( error< tangDeviation) { 
                     tangId = i;
                     tangDeviation = error;
             }

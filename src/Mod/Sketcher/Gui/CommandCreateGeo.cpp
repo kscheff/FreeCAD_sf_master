@@ -1709,7 +1709,7 @@ public:
             setPositionText(onSketchPos, text);
 
             sketchgui->drawEdit(EditCurve);
-            if (seekAutoConstraint(sugConstr2, onSketchPos, Base::Vector2D(0.f,0.f),
+            if (seekAutoConstraint(sugConstr2, onSketchPos, onSketchPos - EditCurve[0],
                                    AutoConstraint::CURVE)) {
                 renderSuggestConstraintsCursor(sugConstr2);
                 return;
@@ -1985,7 +1985,7 @@ public:
                 setPositionText(onSketchPos, text);
 
                 sketchgui->drawEdit(editCurve);
-                if (seekAutoConstraint(sugConstr2, onSketchPos, Base::Vector2D(0.f,0.f),
+                if (seekAutoConstraint(sugConstr2, onSketchPos, onSketchPos - centroid,
                     AutoConstraint::CURVE)) {
                     renderSuggestConstraintsCursor(sugConstr2);
                     return;
@@ -2000,7 +2000,7 @@ public:
                 setPositionText(onSketchPos, text);
 
                 sketchgui->drawEdit(editCurve);
-                if (seekAutoConstraint(sugConstr3, onSketchPos, Base::Vector2D(0.f,0.f),
+                if (seekAutoConstraint(sugConstr3, onSketchPos, onSketchPos - centroid,
                     AutoConstraint::CURVE)) {
                     renderSuggestConstraintsCursor(sugConstr3);
                     return;
@@ -2365,7 +2365,6 @@ private:
         octave << "plot(centroid(1), centroid(2), \"b.\", \"markersize\", 5);\n";
         octave << "plot(f(1), f(2), \"c.\", \"markersize\", 5);\n";
         octave << "plot(fPrime(1), fPrime(2), \"m.\", \"markersize\", 5);\n";
-
         octave << "n = [periapsis(1) - f(1), periapsis(2) - f(2)];\n";
         octave << "h = quiver(f(1),f(2),n(1),n(2), 0);\n";
         octave << "set (h, \"maxheadsize\", 0.1);\n\n";
@@ -2709,7 +2708,7 @@ public:
             setPositionText(onSketchPos, text);
 
             sketchgui->drawEdit(EditCurve);
-            if (seekAutoConstraint(sugConstr2, onSketchPos, Base::Vector2D(0.f,0.f),
+            if (seekAutoConstraint(sugConstr2, onSketchPos, onSketchPos - centerPoint,
                                    AutoConstraint::CURVE)) {
                 renderSuggestConstraintsCursor(sugConstr2);
                 return;
