@@ -2836,11 +2836,14 @@ public:
             double angle2 = angle1 + (angle1 < 0. ? 2 : -2) * M_PI ;
             arcAngle = abs(angle1-arcAngle) < abs(angle2-arcAngle) ? angle1 : angle2;
             
+            bool isOriginalArcCCW=true;
+            
             if (arcAngle > 0)
                 endAngle = startAngle + arcAngle;
             else {
                 endAngle = startAngle;
                 startAngle += arcAngle;
+                isOriginalArcCCW=false;
             }
             
             Base::Vector2D majAxisDir,minAxisDir,minAxisPoint,majAxisPoint;
@@ -2917,13 +2920,13 @@ public:
             
             // add suggested constraints for start of arc
             if (sugConstr3.size() > 0) {
-                createAutoConstraints(sugConstr3, currentgeoid, Sketcher::start);
+                createAutoConstraints(sugConstr3, currentgeoid, isOriginalArcCCW?Sketcher::start:Sketcher::end);
                 sugConstr3.clear();
             }
             
             // add suggested constraints for start of arc
             if (sugConstr4.size() > 0) {
-                createAutoConstraints(sugConstr4, currentgeoid, Sketcher::end);
+                createAutoConstraints(sugConstr4, currentgeoid, isOriginalArcCCW?Sketcher::end:Sketcher::start);
                 sugConstr4.clear();
             }
 
