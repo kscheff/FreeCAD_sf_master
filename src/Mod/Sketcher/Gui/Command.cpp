@@ -496,7 +496,55 @@ bool CmdSketcherValidateSketch::isActive(void)
     return (hasActiveDocument() && !Gui::Control().activeDialog());
 }
 
+DEF_STD_CMD_A(CmdSketcherMergeSketchs);
 
+CmdSketcherMergeSketchs::CmdSketcherMergeSketchs()
+  : Command("Sketcher_MergeSketchs")
+{
+    sAppModule      = "Sketcher";
+    sGroup          = QT_TR_NOOP("Sketcher");
+    sMenuText       = QT_TR_NOOP("Merge sketches");
+    sToolTipText    = QT_TR_NOOP("Merge sketches");
+    sWhatsThis      = "Sketcher_MergeSketches";
+    sStatusTip      = sToolTipText;
+    eType           = 0;
+}
+
+void CmdSketcherMergeSketchs::activated(int iMsg)
+{
+    std::vector<Gui::SelectionObject> selection = getSelection().getSelectionEx(0, Sketcher::SketchObject::getClassTypeId());
+    if (selection.size() < 2) {
+        QMessageBox::warning(Gui::getMainWindow(),
+            qApp->translate("CmdSketcherMergeSketchs", "Wrong selection"),
+            qApp->translate("CmdSketcherMergeSketchs", "Select at least two sketches, please."));
+        return;
+    }
+
+    Sketcher::SketchObject* Obj1 = static_cast<Sketcher::SketchObject*>(selection[0].getObject());
+    
+    App::Document* doc = App::GetApplication().getActiveDocument();
+       
+    // create Sketch 
+    std::string FeatName = getUniqueObjectName("Sketch");
+
+    openCommand("Create a merge Sketch");
+    doCommand(Doc,"App.activeDocument().addObject('Sketcher::SketchObject','%s')",FeatName.c_str());
+    
+    Sketcher::SketchObject* mergesketch = static_cast<Sketcher::SketchObject*>(doc->getObject(FeatName.c_str()));
+    
+    for (std::vector<Gui::SelectionObject>::const_iterator it=selection.begin(); it != selection.end(); ++it) {
+        const Sketcher::SketchObject* Obj = static_cast<const Sketcher::SketchObject*>((*it).getObject());
+        mergesketch->addGeometry(Obj->getCompleteGeometry());
+    }
+    
+    doCommand(Gui,"App.activeDocument().recompute()");
+    
+}
+
+bool CmdSketcherMergeSketchs::isActive(void)
+{
+    return (hasActiveDocument() && !Gui::Control().activeDialog());
+}
 
 
 
@@ -511,4 +559,5 @@ void CreateSketcherCommands(void)
     rcCmdMgr.addCommand(new CmdSketcherMapSketch());
     rcCmdMgr.addCommand(new CmdSketcherViewSketch());
     rcCmdMgr.addCommand(new CmdSketcherValidateSketch());
+    rcCmdMgr.addCommand(new CmdSketcherMergeSketchs());
 }
