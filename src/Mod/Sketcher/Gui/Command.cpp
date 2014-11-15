@@ -48,6 +48,7 @@
 #include "SketchOrientationDialog.h"
 #include "ViewProviderSketch.h"
 #include "TaskSketcherValidation.h"
+#include "../App/Constraint.h"
 
 using namespace std;
 using namespace SketcherGui;
@@ -532,9 +533,28 @@ void CmdSketcherMergeSketchs::activated(int iMsg)
     
     Sketcher::SketchObject* mergesketch = static_cast<Sketcher::SketchObject*>(doc->getObject(FeatName.c_str()));
     
+    int baseGeometry=0;
+    int baseConstraints=0;
+    
     for (std::vector<Gui::SelectionObject>::const_iterator it=selection.begin(); it != selection.end(); ++it) {
         const Sketcher::SketchObject* Obj = static_cast<const Sketcher::SketchObject*>((*it).getObject());
-        mergesketch->addGeometry(Obj->getCompleteGeometry());
+        int addedGeometries=mergesketch->addGeometry(Obj->getInternalGeometry());
+        
+        int addedConstraints=mergesketch->addConstraints(Obj->Constraints.getValues());
+        
+        for(int i=0; i<=(addedConstraints-baseConstraints); i++){
+                Sketcher::Constraint * constraint= mergesketch->Constraints.getValues()[i+baseConstraints];
+                
+                if(constraint->First!=Sketcher::Constraint::GeoUndef || constraint->First==-1 || constraint->First==-2) // not x, y axes or origin
+                    constraint->First+=baseGeometry;
+                if(constraint->Second!=Sketcher::Constraint::GeoUndef || constraint->Second==-1 || constraint->Second==-2) // not x, y axes or origin
+                    constraint->Second+=baseGeometry;
+                if(constraint->Third!=Sketcher::Constraint::GeoUndef || constraint->Third==-1 || constraint->Third==-2) // not x, y axes or origin
+                    constraint->Third+=baseGeometry;
+        }
+            
+        baseGeometry=addedGeometries+1;
+        baseConstraints=addedConstraints+1;
     }
     
     doCommand(Gui,"App.activeDocument().recompute()");
