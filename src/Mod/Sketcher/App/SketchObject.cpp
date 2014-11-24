@@ -194,7 +194,9 @@ int SketchObject::setDatum(int ConstrId, double Datum)
         type != DistanceX &&
         type != DistanceY &&
         type != Radius &&
-        type != Angle)
+        type != Angle &&
+        type != Tangent && //for tangent, value==0 is autodecide, value==Pi/2 is external and value==-Pi/2 is internal
+        type != Perpendicular)
         return -1;
 
     if ((type == Distance || type == Radius) && Datum <= 0)
@@ -429,13 +431,32 @@ int SketchObject::setConstruction(int GeoId, bool on)
     return 0;
 }
 
+//ConstraintList is used only to make copies.
 int SketchObject::addConstraints(const std::vector<Constraint *> &ConstraintList)
 {
     const std::vector< Constraint * > &vals = this->Constraints.getValues();
 
     std::vector< Constraint * > newVals(vals);
     newVals.insert(newVals.end(), ConstraintList.begin(), ConstraintList.end());
+
+    //test if tangent constraints have been added; AutoLockTangency.
+    std::vector< Constraint * > tbd;//list of temporary copies that need to be deleted
+    for(int i = newVals.size()-ConstraintList.size(); i<newVals.size(); i++){
+        if( newVals[i]->Type == Tangent || newVals[i]->Type == Perpendicular ){
+            Constraint *constNew = newVals[i]->clone();
+            AutoLockTangencyAndPerpty(constNew);
+            tbd.push_back(constNew);
+            newVals[i] = constNew;
+        }
+    }
+
     this->Constraints.setValues(newVals);
+
+    //clean up - delete temporary copies of constraints that were made to affect the constraints
+    for(int i=0; i<tbd.size(); i++){
+        delete (tbd[i]);
+    }
+
     return this->Constraints.getSize()-1;
 }
 
@@ -445,6 +466,10 @@ int SketchObject::addConstraint(const Constraint *constraint)
 
     std::vector< Constraint * > newVals(vals);
     Constraint *constNew = constraint->clone();
+
+    if (constNew->Type == Tangent || constNew->Type == Perpendicular)
+        AutoLockTangencyAndPerpty(constNew);
+
     newVals.push_back(constNew);
     this->Constraints.setValues(newVals);
     delete constNew;
@@ -2263,6 +2288,63 @@ int SketchObject::getVertexIndexGeoPos(int GeoId, PointPos PosId) const
     }
 
     return -1;
+}
+
+///Locks tangency/perpendicularity type of such a constraint.
+///The constraint passed must be writable (i.e. the one that is not
+/// yet in the constraint list).
+///Tangency type (internal/external) is derived from current geometry
+/// the constraint refers to.
+///Same for perpendicularity type.
+///
+///This function catches exceptions, because it's not a reason to
+/// not create a constraint if tangency/perp-ty type cannot be determined.
+void SketchObject::AutoLockTangencyAndPerpty(Constraint *cstr)
+{
+    try{
+        assert ( cstr->Type == Tangent  ||  cstr->Type == Perpendicular);
+        if(cstr->Value != 0.0) /*tangency type already set*/
+            return;
+        //decide on tangency type. Write the angle value into the datum field of the constraint.
+        int geoId1, geoId2, geoIdPt;
+        PointPos posPt;
+        geoId1 = cstr->First;
+        geoId2 = cstr->Second;
+        geoIdPt = cstr->Third;
+        posPt = cstr->ThirdPos;
+        if (geoIdPt == Constraint::GeoUndef){//not tangent-via-point, try endpoint-to-endpoint...
+            geoIdPt = cstr->First;
+            posPt = cstr->FirstPos;
+        }
+        if (posPt == none){//not endpoint-to-curve and not endpoint-to-endpoint tangent (is simple tangency)
+            //no tangency lockdown is implemented for simple tangency
+        } else {
+            Base::Vector3d p = getPoint(geoIdPt, posPt);
+
+            //this piece of code is also present in Sketch.cpp, correct for offset
+            //and to do the autodecision for old sketches.
+            double angleOffset = 0.0;//the difference between the datum value and the actual angle to apply. (datum=angle+offset)
+            double angleDesire = 0.0;//the desired angle value (and we are to decide if 180* should be added to it)
+            if (cstr->Type == Tangent) {angleOffset = -M_PI/2; angleDesire = 0.0;}
+            if (cstr->Type == Perpendicular) {angleOffset = 0; angleDesire = M_PI/2;}
+
+            double angleErr = calculateAngleViaPoint(geoId1, geoId2, p.x, p.y) - angleDesire;
+
+            //bring angleErr to -pi..pi
+            if (angleErr > M_PI) angleErr -= M_PI*2;
+            if (angleErr < -M_PI) angleErr += M_PI*2;
+
+            //the autodetector
+            if(abs(angleErr) > M_PI/2 )
+                angleDesire += M_PI;
+
+            cstr->Value = angleDesire + angleOffset; //external tangency. The angle stored is offset by Pi/2 so that a value of 0.0 is invalid and threated as "undecided".
+        }
+    } catch (Base::Exception& e){
+        //failure to determine tangency type is not a big deal, so a warning.
+        assert(0);//but it shouldn't happen (failure to determine tangency type)!
+        Base::Console().Warning("Error in AutoLockTangency. %s", e.what());
+    }
 }
 
 // Python Sketcher feature ---------------------------------------------------------
