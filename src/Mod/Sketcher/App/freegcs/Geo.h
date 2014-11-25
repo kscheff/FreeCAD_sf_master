@@ -65,6 +65,19 @@ namespace GCS
         Point center;
         double *rad;
     };
+    
+    class ArcOfParabola
+    {
+    public:
+        ArcOfParabola(){startAngle=0;endAngle=0;}
+        double *startAngle;
+        double *endAngle;
+        Point start;
+        Point end;
+        Point center;
+        double *focusX; //+u
+        double *focusY;        
+    };
 
 } //namespace GCS
 

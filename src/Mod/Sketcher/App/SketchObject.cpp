@@ -30,11 +30,13 @@
 # include <gp_Pln.hxx>
 # include <gp_Ax3.hxx>
 # include <gp_Circ.hxx>
+# include <gp_Parab.hxx>
 # include <BRepAdaptor_Surface.hxx>
 # include <BRepAdaptor_Curve.hxx>
 # include <BRep_Tool.hxx>
 # include <Geom_Plane.hxx>
 # include <Geom_Circle.hxx>
+# include <Geom_Parabola.hxx>
 # include <Geom_TrimmedCurve.hxx>
 # include <GeomAPI_ProjectPointOnSurf.hxx>
 # include <BRepOffsetAPI_NormalProjection.hxx>
@@ -265,6 +267,14 @@ Base::Vector3d SketchObject::getPoint(int GeoId, PointPos PosId) const
             return aoc->getEndPoint();
         else if (PosId == mid)
             return aoc->getCenter();
+    } else if (geo->getTypeId() == Part::GeomArcOfParabola::getClassTypeId()) {
+        const Part::GeomArcOfParabola *aop = dynamic_cast<const Part::GeomArcOfParabola*>(geo);
+        if (PosId == start)
+            return aop->getStartPoint();
+        else if (PosId == end)
+            return aop->getEndPoint();
+        else if (PosId == mid)
+            return aop->getCenter();
     }
 
     return Base::Vector3d();
@@ -1101,7 +1111,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
                 }
             }
         }
-    }
+    } 
 
     return -1;
 }
