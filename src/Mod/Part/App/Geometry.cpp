@@ -306,7 +306,7 @@ TopoDS_Shape GeomCurve::toShape() const
 bool GeomCurve::tangent(double u, gp_Dir& dir) const
 {
     Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
-    GeomLProp_CLProps prop(c,u,1,Precision::Confusion());
+    GeomLProp_CLProps prop(c,u,2,Precision::Confusion());
     if (prop.IsTangentDefined()) {
         prop.Tangent(dir);
         return true;
@@ -345,10 +345,20 @@ Base::Vector3d GeomCurve::secondDerivativeAtParameter(double u) const
     return Base::Vector3d(vec.X(),vec.Y(),vec.Z());
 }
 
+Base::Vector3d GeomCurve::thirdDerivativeAtParameter(double u) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    GeomLProp_CLProps prop(c,u,3,Precision::Confusion());
+    
+    const gp_Vec &vec=prop.D3();
+    
+    return Base::Vector3d(vec.X(),vec.Y(),vec.Z());
+}
+
 bool GeomCurve::normal(double u, gp_Dir& dir) const
 {
     Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
-    GeomLProp_CLProps prop(c,u,1,Precision::Confusion());
+    GeomLProp_CLProps prop(c,u,2,Precision::Confusion());
     if (prop.IsTangentDefined()) {
         prop.Normal(dir);
         return true;

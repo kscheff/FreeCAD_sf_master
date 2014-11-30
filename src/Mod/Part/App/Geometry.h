@@ -118,6 +118,7 @@ public:
     Base::Vector3d pointAtParameter(double u) const;
     Base::Vector3d firstDerivativeAtParameter(double u) const;
     Base::Vector3d secondDerivativeAtParameter(double u) const;
+    Base::Vector3d thirdDerivativeAtParameter(double u) const;
     bool normal(double u, gp_Dir& dir) const;
     bool closestParameter(Base::Vector3d point, double &u) const;
     bool closestParameterToBasicCurve(Base::Vector3d point, double &u) const;
