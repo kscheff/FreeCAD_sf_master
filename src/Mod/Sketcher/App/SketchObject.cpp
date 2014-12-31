@@ -1906,9 +1906,27 @@ void SketchObject::rebuildExternalGeometry(void)
                         }
                         else {
                             Part::GeomArcOfCircle* gArc = new Part::GeomArcOfCircle();
-                            Handle_Geom_Curve hCircle = new Geom_Circle(circle);
-                            Handle_Geom_TrimmedCurve tCurve = new Geom_TrimmedCurve(hCircle, curve.FirstParameter(),
-                                                                                    curve.LastParameter());
+			   
+			   gp_Dir dir = circle.Axis().Direction();
+				      
+			   Handle_Geom_Curve hCircle;
+			   Handle_Geom_TrimmedCurve tCurve;
+			    
+			   if(dir.Z()>0){
+			      
+				hCircle = new Geom_Circle(circle);
+				tCurve = new Geom_TrimmedCurve(hCircle, curve.FirstParameter(),
+							      curve.LastParameter());
+			    }
+			    else {
+			      gp_Dir normal = gp_Dir(0,0,1); 
+			      gp_Ax2 xdirref(circle.Location(), normal);
+							      
+			      hCircle = new Geom_Circle(xdirref,circle.Radius());
+			      tCurve = new Geom_TrimmedCurve(hCircle, curve.FirstParameter(),
+								   curve.LastParameter());					
+			    }
+				      
                             gArc->setHandle(tCurve);
                             gArc->Construction = true;
                             ExternalGeo.push_back(gArc);
@@ -1967,10 +1985,27 @@ void SketchObject::rebuildExternalGeometry(void)
                                     }
                                     else {
                                         Part::GeomArcOfCircle* arc = new Part::GeomArcOfCircle();
-                                        Handle_Geom_Curve curve = new Geom_Circle(c);
-                                        Handle_Geom_TrimmedCurve tCurve = new Geom_TrimmedCurve(curve, projCurve.FirstParameter(),
+				       
+				      gp_Dir dir = c.Axis().Direction();
+				      
+				      Handle_Geom_Curve curve;
+				      Handle_Geom_TrimmedCurve tCurve;
+				      
+				      if(dir.Z()>0){
+					
+					  curve = new Geom_Circle(c);
+					  tCurve = new Geom_TrimmedCurve(curve, projCurve.FirstParameter(),
                                                                                                 projCurve.LastParameter());
-                                        arc->setHandle(tCurve);
+				      }
+				      else {
+					gp_Dir normal = gp_Dir(0,0,1); 
+					gp_Ax2 xdirref(c.Location(), normal);
+									
+					curve = new Geom_Circle(xdirref,c.Radius());
+					tCurve = new Geom_TrimmedCurve(curve, projCurve.FirstParameter(),
+                                                                                                projCurve.LastParameter());					
+				      }
+				       arc->setHandle(tCurve);
                                         arc->Construction = true;
                                         ExternalGeo.push_back(arc);
                                     }
