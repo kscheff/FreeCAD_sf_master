@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>176</width>
+    <width>177</width>
     <height>288</height>
    </rect>
   </property>
@@ -26,26 +26,31 @@
      <item>
       <widget class="QComboBox" name="comboBoxFilter">
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <item>
         <property name="text">
-         <string>All</string>
+         <string>All (Driving)</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Normal</string>
+         <string>Normal (Driving)</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Datums</string>
+         <string>Datums (Driving)</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Named</string>
+         <string>Named (Driving)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Non-Driving</string>
         </property>
        </item>
       </widget>
