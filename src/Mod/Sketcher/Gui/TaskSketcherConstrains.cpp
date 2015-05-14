@@ -353,7 +353,21 @@ void TaskSketcherConstrains::on_listWidgetConstraints_updateDrivingStatus(QListW
     
     const std::vector< Sketcher::Constraint * > &vals = sketchView->getSketchObject()->Constraints.getValues();
     
-    vals[it->ConstraintNbr]->isDriving=status;
+    try {
+        Gui::Command::openCommand("Modify driving status of constraint");
+        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.setDriving(%i,%i)",
+            this->sketchView->getSketchObject()->getNameInDocument(),
+            it->ConstraintNbr,
+            status);
+        Gui::Command::commitCommand();
+        Gui::Command::updateActive();
+    }
+    catch (const Base::Exception& e) {
+        Gui::Command::abortCommand();
+    }
+    
+    
+    //vals[it->ConstraintNbr]->isDriving=status;
     
     // trigger solver
     // Make change color in view probably triggered by the solver
