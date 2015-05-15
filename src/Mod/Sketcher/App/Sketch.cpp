@@ -2012,9 +2012,7 @@ bool Sketch::updateGeometry()
 }
 
 bool Sketch::updateNonDrivingConstraints()
-{
-    int rtn = -1;
-    
+{    
      for (std::vector<Constraint *>::iterator it = NonDrivingConstraints.begin();it!=NonDrivingConstraints.end();++it){
         switch ((*it)->Type) {
             case DistanceX:
