@@ -570,7 +570,7 @@ PyObject* SketchObjectPy::getDatum(PyObject *args)
 
 PyObject* SketchObjectPy::setDriving(PyObject *args)
 {
-    bool driving;
+    int driving;
     int constrid;
     
     if (!PyArg_ParseTuple(args, "ii", &constrid, &driving))
