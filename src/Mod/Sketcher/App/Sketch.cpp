@@ -2013,33 +2013,326 @@ bool Sketch::updateGeometry()
 
 bool Sketch::updateNonDrivingConstraints()
 {
-    //only if there are non-driving constraints
-    if(NonDrivingConstraints.size()>0){
-        int drivingConstraintCounter = ConstraintsCounter;
-        int fixParametersCounter = FixParameters.size();
-        
-        addConstraints(NonDrivingConstraints);
-        
-        if((ConstraintsCounter-drivingConstraintCounter)==(FixParameters.size()-fixParametersCounter))
-        { // assuming one fix parameter per non-driving-constraint
-            std::vector<double> &errors = GCSsys.errorsOfConstraints((ConstraintsCounter-drivingConstraintCounter));
-            
-            unsigned int index=0;
-            
-            for (std::vector<Constraint *>::const_iterator it = NonDrivingConstraints.begin();it!=NonDrivingConstraints.end();++it,++index)
-                (*it)->Value = *FixParameters[fixParametersCounter+index]+errors[index];
-            
-        }
-        
-        //clean up
-        // remove addedConstraints
-        // remove added fixparameters
-        GCSsys.removeConstraints((ConstraintsCounter-drivingConstraintCounter));
-        FixParameters.erase(FixParameters.begin()+fixParametersCounter,FixParameters.end());
-        
-        return false;
-    }
+    int rtn = -1;
     
+     for (std::vector<Constraint *>::iterator it = NonDrivingConstraints.begin();it!=NonDrivingConstraints.end();++it){
+        switch ((*it)->Type) {
+            case DistanceX:
+                if ((*it)->FirstPos == none) { // horizontal length of a line
+                    int geoId = checkGeoId((*it)->First);
+                    GCS::Line &l = Lines[Geoms[geoId].index];
+                    (*it)->Value = *l.p2.x-*l.p1.x;
+                }
+                else if ((*it)->Second == Constraint::GeoUndef){ // point on fixed x-coordinate
+                    int geoId = checkGeoId((*it)->First);
+                    int pointId = getPointId(geoId, (*it)->FirstPos);
+
+                    if (pointId >= 0 && pointId < int(Points.size())) {
+                        GCS::Point &p = Points[pointId];
+                        (*it)->Value = *p.x;
+                    }
+                }
+                else if ((*it)->SecondPos != none){ // point to point horizontal distance
+                    int geoId1 = checkGeoId((*it)->First);
+                    int geoId2 = checkGeoId((*it)->Second);
+
+                    int pointId1 = getPointId(geoId1, (*it)->FirstPos);
+                    int pointId2 = getPointId(geoId2, (*it)->SecondPos);
+
+                    if (pointId1 >= 0 && pointId1 < int(Points.size()) &&
+                        pointId2 >= 0 && pointId2 < int(Points.size())) {
+                        GCS::Point &p1 = Points[pointId1];
+                        GCS::Point &p2 = Points[pointId2];
+                        (*it)->Value = *p2.x-*p1.x;
+                    }
+                }
+                break;
+            case DistanceY:
+                if ((*it)->FirstPos == none) {// vertical length of a line
+                    int geoId = checkGeoId((*it)->First);
+                    GCS::Line &l = Lines[Geoms[geoId].index];
+                    (*it)->Value = *l.p2.y-*l.p1.y;
+                }
+                else if ((*it)->Second == Constraint::GeoUndef){ // point on fixed y-coordinate
+                    int geoId = checkGeoId((*it)->First);
+                    int pointId = getPointId(geoId, (*it)->FirstPos);
+
+                    if (pointId >= 0 && pointId < int(Points.size())) {
+                        GCS::Point &p = Points[pointId];
+                        (*it)->Value = *p.y;
+                    }
+                }
+                else if ((*it)->SecondPos != none){ // point to point vertical distance
+                    int geoId1 = checkGeoId((*it)->First);
+                    int geoId2 = checkGeoId((*it)->Second);
+
+                    int pointId1 = getPointId(geoId1, (*it)->FirstPos);
+                    int pointId2 = getPointId(geoId2, (*it)->SecondPos);
+
+                    if (pointId1 >= 0 && pointId1 < int(Points.size()) &&
+                        pointId2 >= 0 && pointId2 < int(Points.size())) {
+                        GCS::Point &p1 = Points[pointId1];
+                        GCS::Point &p2 = Points[pointId2];
+                        (*it)->Value = *p2.y-*p1.y;
+                    }
+                }
+                break;
+            case Distance:
+                if ((*it)->SecondPos != none) {// point to point distance
+                    int geoId1 = checkGeoId((*it)->First);
+                    int geoId2 = checkGeoId((*it)->Second);
+
+                    int pointId1 = getPointId(geoId1, (*it)->FirstPos);
+                    int pointId2 = getPointId(geoId2, (*it)->SecondPos);
+
+                    if (pointId1 >= 0 && pointId1 < int(Points.size()) &&
+                        pointId2 >= 0 && pointId2 < int(Points.size())) {
+                        GCS::Point &p1 = Points[pointId1];
+                        GCS::Point &p2 = Points[pointId2];
+
+                        double dx = (*p1.x - *p2.x);
+                        double dy = (*p1.y - *p2.y);
+                        (*it)->Value = sqrt(dx*dx + dy*dy);
+                    }                    
+                }
+                else if ((*it)->Second != Constraint::GeoUndef) {
+                    if ((*it)->FirstPos != none) { // point to line distance
+                        int geoId1 = checkGeoId((*it)->First);
+                        int geoId2 = checkGeoId((*it)->Second);
+
+                        int pointId1 = getPointId(geoId1, (*it)->FirstPos);
+
+                        if (pointId1 >= 0 && pointId1 < int(Points.size())) {
+                            GCS::Point &p1 = Points[pointId1];
+                            GCS::Line &l2 = Lines[Geoms[geoId2].index];
+                            
+                            double x0=*p1.x, x1=*l2.p1.x, x2=*l2.p2.x;
+                            double y0=*p1.y, y1=*l2.p1.y, y2=*l2.p2.y;
+                            double dx = x2-x1;
+                            double dy = y2-y1;
+                            double d = sqrt(dx*dx+dy*dy);
+                            double area = std::abs(-x0*dy+y0*dx+x1*y2-x2*y1); // = x1y2 - x2y1 - x0y2 + x2y0 + x0y1 - x1y0 = 2*(triangle area)
+                            
+                            (*it)->Value = area/d;
+                        }                        
+
+                    }
+                    else { // line to line distance (not implemented yet)
+                        ;
+                    }
+                }
+                else { // line length
+                    int geoId = checkGeoId((*it)->First);
+                    GCS::Line &l = Lines[Geoms[geoId].index];
+                    
+                    double dx = (*l.p1.x - *l.p2.x);
+                    double dy = (*l.p1.y - *l.p2.y);
+                    
+                    (*it)->Value = sqrt(dx*dx + dy*dy);
+                }
+                break;
+            case Angle:
+                if ((*it)->Third != Constraint::GeoUndef){
+                    // angle via point not yet implemented
+                    int geoId1 = (*it)->First;
+                    int geoId2 = (*it)->Second;
+                    int geoId3 = (*it)->Third;
+
+                    PointPos pos1 = (*it)->FirstPos;
+                    PointPos pos2 = (*it)->SecondPos;
+                    PointPos pos3 = (*it)->ThirdPos;
+
+                    bool avp = geoId3!=Constraint::GeoUndef; //is angle-via-point?
+                    bool e2c = pos2 == none  &&  pos1 != none;//is endpoint-to-curve?
+                    bool e2e = pos2 != none  &&  pos1 != none;//is endpoint-to-endpoint?
+
+                    if (!( avp || e2c || e2e )) {
+                        //assert(0);//none of the three types. Why are we here??
+                        return false;
+                    }
+
+                    geoId1 = checkGeoId(geoId1);
+                    geoId2 = checkGeoId(geoId2);
+                    if(avp)
+                        geoId3 = checkGeoId(geoId3);
+
+                    if (Geoms[geoId1].type == Point ||
+                        Geoms[geoId2].type == Point){
+                        Base::Console().Error("non-driving addAngleAtPointConstraint: one of the curves is a point!\n");
+                        return false;
+                    }
+
+                    GCS::Curve* crv1 =getGCSCurveByGeoId(geoId1);
+                    GCS::Curve* crv2 =getGCSCurveByGeoId(geoId2);
+                    if (!crv1 || !crv2) {
+                        Base::Console().Error("non-driving addAngleAtPointConstraint: getGCSCurveByGeoId returned NULL!\n");
+                        return false;
+                    }
+
+                    int pointId = -1;
+                    if(avp)
+                        pointId = getPointId(geoId3, pos3);
+                    else if (e2e || e2c)
+                        pointId = getPointId(geoId1, pos1);
+
+                    if (pointId < 0 || pointId >= int(Points.size())){
+                        Base::Console().Error("non-driving addAngleAtPointConstraint: point index out of range.\n");
+                        return -1;
+                    }
+                    GCS::Point &p = Points[pointId];
+                    GCS::Point* p2 = 0;
+                    if(e2e){//we need second point
+                        int pointId = getPointId(geoId2, pos2);
+                        if (pointId < 0 || pointId >= int(Points.size())){
+                            Base::Console().Error("non-driving  addAngleAtPointConstraint: point index out of range.\n");
+                            return -1;
+                        }
+                        p2 = &(Points[pointId]);
+                    }
+                    
+                    /*DeriVector2 n1 = crv1->CalculateNormal(poa);
+                    DeriVector2 n2 = crv2->CalculateNormal(poa);
+                    
+                    double dx1 = (*l1p2.x - *l1p1.x);
+                    double dy1 = (*l1p2.y - *l1p1.y);
+                    double dx2 = (*l2p2.x - *l2p1.x);
+                    double dy2 = (*l2p2.y - *l2p1.y);
+                    (*it)->Value = atan2(dy2,dx2)-atan2(dy1,dx1);*/
+  
+                    return false;                  
+                } else if ((*it)->SecondPos != none){ // angle between two lines (with explicit start points)
+                    int geoId1 = checkGeoId((*it)->First);
+                    int geoId2 = checkGeoId((*it)->Second);
+
+                    if (Geoms[geoId1].type != Line ||
+                        Geoms[geoId2].type != Line)
+                        return false;
+
+                    GCS::Point *l1p1=0, *l1p2=0;
+                    
+                    if ((*it)->FirstPos == start) {
+                        l1p1 = &Points[Geoms[geoId1].startPointId];
+                        l1p2 = &Points[Geoms[geoId1].endPointId];
+                    } else if ((*it)->FirstPos == end) {
+                        l1p1 = &Points[Geoms[geoId1].endPointId];
+                        l1p2 = &Points[Geoms[geoId1].startPointId];
+                    }
+
+                    GCS::Point *l2p1=0, *l2p2=0;
+                    if ((*it)->SecondPos == start) {
+                        l2p1 = &Points[Geoms[geoId2].startPointId];
+                        l2p2 = &Points[Geoms[geoId2].endPointId];
+                    } else if ((*it)->SecondPos == end) {
+                        l2p1 = &Points[Geoms[geoId2].endPointId];
+                        l2p2 = &Points[Geoms[geoId2].startPointId];
+                    }
+
+                    if (l1p1 == 0 || l2p1 == 0)
+                        return false;
+
+                    double dx1 = (*(l1p2->x) - *(l1p1->x));
+                    double dy1 = (*(l1p2->y) - *(l1p1->y));
+                    double dx2 = (*(l2p2->x) - *(l2p1->x));
+                    double dy2 = (*(l2p2->y) - *(l2p1->y));
+                    
+                    (*it)->Value = atan2(dy2,dx2)-atan2(dy1,dx1);
+                }
+                else if ((*it)->Second != Constraint::GeoUndef) { // angle between two lines
+                    int geoId1 = checkGeoId((*it)->First);
+                    int geoId2 = checkGeoId((*it)->Second);
+
+                    if (Geoms[geoId1].type != Line ||
+                        Geoms[geoId2].type != Line)
+                        return false;
+
+                    GCS::Line &l1 = Lines[Geoms[geoId1].index];
+                    GCS::Line &l2 = Lines[Geoms[geoId2].index];
+
+                    double dx1 = (*l1.p2.x - *l1.p1.x);
+                    double dy1 = (*l1.p2.y - *l1.p1.y);
+                    double dx2 = (*l2.p2.x - *l2.p1.x);
+                    double dy2 = (*l2.p2.y - *l2.p1.y);
+                    (*it)->Value = atan2(dy2,dx2)-atan2(dy1,dx1);
+
+                }
+                else if ((*it)->First != Constraint::GeoUndef){ // orientation angle of a line
+                    int geoId = checkGeoId((*it)->First);
+
+                    if (Geoms[geoId].type == Line) {
+                        GCS::Line &l = Lines[Geoms[geoId].index];
+
+                        double dx = (*l.p2.x - *l.p1.x);
+                        double dy = (*l.p2.y - *l.p1.y);                            
+                        (*it)->Value = atan2(dy,dx);
+                    }
+                    else if (Geoms[geoId].type == Arc) {
+                        GCS::Arc &a = Arcs[Geoms[geoId].index];
+
+                        double dx1 = (*a.start.x - *a.center.x);
+                        double dy1 = (*a.start.y - *a.center.y);
+                        double dx2 = (*a.end.x - *a.center.x);
+                        double dy2 = (*a.end.y - *a.center.y);
+                        (*it)->Value = atan2(dy2,dx2)-atan2(dy1,dx1);
+                    }                    
+                }
+                break;
+            case Radius:
+            {
+                int geoId = checkGeoId((*it)->First);
+
+                if (Geoms[geoId].type == Circle) {
+                    GCS::Circle &c = Circles[Geoms[geoId].index];
+                    // add the parameter for the radius
+                    (*it)->Value = *c.rad;
+                }
+                else if (Geoms[geoId].type == Arc) {
+                    GCS::Arc &a = Arcs[Geoms[geoId].index];
+                    (*it)->Value = *a.rad;
+                }
+                break;
+            }
+            case SnellsLaw:
+            {  
+                // not yet implemented
+                int geoIdRay1 = checkGeoId((*it)->First);
+                int geoIdRay2 = checkGeoId((*it)->Second);
+                int geoIdBnd = checkGeoId((*it)->Third);
+
+                if (Geoms[geoIdRay1].type == Point ||
+                    Geoms[geoIdRay2].type == Point){
+                    Base::Console().Error("non-driving addSnellsLawConstraint: point is not a curve. Not applicable!\n");
+                    return false;
+                }
+
+                GCS::Curve* ray1 =getGCSCurveByGeoId(geoIdRay1);
+                GCS::Curve* ray2 =getGCSCurveByGeoId(geoIdRay2);
+                GCS::Curve* boundary =getGCSCurveByGeoId(geoIdBnd);
+                if (!ray1 || !ray2 || !boundary) {
+                    Base::Console().Error("non-driving addSnellsLawConstraint: getGCSCurveByGeoId returned NULL!\n");
+                    return false;
+                }
+
+                int pointId1 = getPointId(geoIdRay1, (*it)->FirstPos);
+                int pointId2 = getPointId(geoIdRay2, (*it)->SecondPos);
+                
+                if ( pointId1 < 0 || pointId1 >= int(Points.size()) ||
+                    pointId2 < 0 || pointId2 >= int(Points.size()) ){
+                    Base::Console().Error("non-driving addSnellsLawConstraint: point index out of range.\n");
+                    return false;
+                }
+                
+                GCS::Point &p1 = Points[pointId1];
+                GCS::Point &p2 = Points[pointId2];
+
+                /*
+                (*it)->Value = 0; */
+                
+                return false;
+ 
+                break;
+            }
+        }
+     }
     return true;
 }
 
