@@ -353,10 +353,10 @@ void TaskSketcherConstrains::on_listWidgetConstraints_updateDrivingStatus(QListW
     
     try {
         Gui::Command::openCommand("Modify driving status of constraint");
-        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.setDriving(%i,%i)",
+        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.setDriving(%i,%s)",
             this->sketchView->getSketchObject()->getNameInDocument(),
             it->ConstraintNbr,
-            status);
+            status?"True":"False");
         Gui::Command::commitCommand();
         Gui::Command::updateActive();
     }

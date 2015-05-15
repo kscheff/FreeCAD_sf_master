@@ -570,13 +570,13 @@ PyObject* SketchObjectPy::getDatum(PyObject *args)
 
 PyObject* SketchObjectPy::setDriving(PyObject *args)
 {
-    int driving;
+    PyObject* driving;
     int constrid;
     
-    if (!PyArg_ParseTuple(args, "ii", &constrid, &driving))
+    if (!PyArg_ParseTuple(args, "iO!", &constrid, &PyBool_Type, &driving))
         return 0;
 
-    if (this->getSketchObjectPtr()->setDriving(constrid, driving)) {
+    if (this->getSketchObjectPtr()->setDriving(constrid, PyObject_IsTrue(driving) ? true : false)) {
         std::stringstream str;
         str << "Not able set Driving for constraint with the given index: " << constrid;
         PyErr_SetString(PyExc_ValueError, str.str().c_str());
