@@ -96,6 +96,11 @@ namespace GCS
 
         int addConstraint(Constraint *constr);
         void removeConstraint(Constraint *constr);
+        
+        // remove last lastn constraints - for non-driving constraint support
+        void removeConstraints(int lastn);
+        // adjust constraint value instead of enforcing it (so constraint behaves as a dimension, not as a constraint)
+        std::vector<double> & errorsOfConstraints(int lastn);
 
         // basic constraints
         int addConstraintEqual(double *param1, double *param2, int tagId=0);

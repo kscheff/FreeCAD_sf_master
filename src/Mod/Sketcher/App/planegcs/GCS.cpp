@@ -309,6 +309,47 @@ void System::removeConstraint(Constraint *constr)
     free(constrvec);
 }
 
+void System::removeConstraints(int lastn)
+{ // removes the trailing "lastn" constraints 
+  // it does not clear the subsystems  
+  // non-driving constraint support
+       
+    for (std::vector<Constraint *>::reverse_iterator rit = clist.rbegin(); rit!= (clist.rbegin()+lastn); ++rit){
+       
+        Constraint *constr=(*rit);
+        
+        /*if (constr->getTag() >= 0)
+            hasDiagnosis = false;
+        clearSubSystems();*/
+
+        std::vector<Constraint *>::iterator it;
+        VEC_pD constr_params = c2p[constr];
+        for (VEC_pD::const_iterator param=constr_params.begin();
+            param != constr_params.end(); ++param) {
+            std::vector<Constraint *> &constraints = p2c[*param];
+            it = std::find(constraints.begin(), constraints.end(), constr);
+            constraints.erase(it);
+        }
+                
+        c2p.erase(constr);
+        
+    }
+    
+    clist.erase(clist.end()-lastn,clist.end());
+    
+}
+
+std::vector<double> & System::errorsOfConstraints(int lastn)
+{
+    std::vector<double> errors;
+    
+    for (std::vector<Constraint *>::reverse_iterator rit = clist.rbegin(); rit!= (clist.rbegin()+lastn); ++rit){
+       
+        errors.push_back((*rit)->error());
+        
+    }
+}
+
 // basic constraints
 
 int System::addConstraintEqual(double *param1, double *param2, int tagId)

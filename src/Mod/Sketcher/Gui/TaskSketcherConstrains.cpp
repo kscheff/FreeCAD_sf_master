@@ -178,11 +178,9 @@ void ConstraintView::updateDrivingStatus()
     
     if (item){
         ConstraintItem *it = dynamic_cast<ConstraintItem*>(item);
-        it->isDriving=!it->isDriving;
-                
-        onUpdateDrivingStatus(item, it->isDriving);
-    }
         
+        onUpdateDrivingStatus(item, !it->isDriving);
+    }    
 }
 
 void ConstraintView::modifyCurrentItem()
@@ -366,12 +364,6 @@ void TaskSketcherConstrains::on_listWidgetConstraints_updateDrivingStatus(QListW
         Gui::Command::abortCommand();
     }
     
-    
-    //vals[it->ConstraintNbr]->isDriving=status;
-    
-    // trigger solver
-    // Make change color in view probably triggered by the solver
-    // Change visualization in list
     slotConstraintsChanged();
     
 }

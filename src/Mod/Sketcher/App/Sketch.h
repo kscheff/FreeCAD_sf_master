@@ -240,6 +240,7 @@ protected:
     };
 
     std::vector<GeoDef> Geoms;
+    std::vector<Constraint *> NonDrivingConstraints;
     GCS::System GCSsys;
     int ConstraintsCounter;
     std::vector<int> Conflicting;
@@ -264,6 +265,7 @@ protected:
 private:
 
     bool updateGeometry(void);
+    bool updateNonDrivingConstraints(void);
 
     /// checks if the index bounds and converts negative indices to positive
     int checkGeoId(int geoId);

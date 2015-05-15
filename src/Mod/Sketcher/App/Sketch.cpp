@@ -94,6 +94,11 @@ void Sketch::clear(void)
     for (std::vector<GeoDef>::iterator it = Geoms.begin(); it != Geoms.end(); ++it)
         if (it->geo) delete it->geo;
     Geoms.clear();
+    
+    // deleting the non-Driving constraints copied into this sketch
+    //for (std::vector<Constraint *>::iterator it = NonDrivingConstraints.begin(); it != NonDrivingConstraints.end(); ++it)
+    //    if (*it) delete *it;
+    NonDrivingConstraints.clear();
 
     GCSsys.clear();
     isInitMove = false;
@@ -121,9 +126,22 @@ int Sketch::setUpSketch(const std::vector<Part::Geometry *> &GeoList,
         Geoms[i].external = true;
 
     // The Geoms list might be empty after an undo/redo
-    if (!Geoms.empty())
-        addConstraints(ConstraintList);
-
+    if (!Geoms.empty()) {
+        //only add driving constraints
+        std::vector<Constraint *> drivingConstraintList(ConstraintList);
+        
+        for (std::vector<Constraint *>::iterator it = drivingConstraintList.begin();it!=drivingConstraintList.end();){
+                if((*it)->isDriving){
+                    ++it;
+                }
+                else{
+                    NonDrivingConstraints.push_back(*it);
+                    it=drivingConstraintList.erase(it);
+                }
+        }  
+        
+        addConstraints(drivingConstraintList);
+    }
     GCSsys.clearByTag(-1);
     GCSsys.declareUnknowns(Parameters);
     GCSsys.initSolution();
@@ -1993,6 +2011,38 @@ bool Sketch::updateGeometry()
     return true;
 }
 
+bool Sketch::updateNonDrivingConstraints()
+{
+    //only if there are non-driving constraints
+    if(NonDrivingConstraints.size()>0){
+        int drivingConstraintCounter = ConstraintsCounter;
+        int fixParametersCounter = FixParameters.size();
+        
+        addConstraints(NonDrivingConstraints);
+        
+        if((ConstraintsCounter-drivingConstraintCounter)==(FixParameters.size()-fixParametersCounter))
+        { // assuming one fix parameter per non-driving-constraint
+            std::vector<double> &errors = GCSsys.errorsOfConstraints((ConstraintsCounter-drivingConstraintCounter));
+            
+            unsigned int index=0;
+            
+            for (std::vector<Constraint *>::const_iterator it = NonDrivingConstraints.begin();it!=NonDrivingConstraints.end();++it,++index)
+                (*it)->Value = *FixParameters[fixParametersCounter+index]+errors[index];
+            
+        }
+        
+        //clean up
+        // remove addedConstraints
+        // remove added fixparameters
+        GCSsys.removeConstraints((ConstraintsCounter-drivingConstraintCounter));
+        FixParameters.erase(FixParameters.begin()+fixParametersCounter,FixParameters.end());
+        
+        return false;
+    }
+    
+    return true;
+}
+
 // solving ==========================================================
 
 int Sketch::solve(void)
@@ -2043,6 +2093,9 @@ int Sketch::solve(void)
                 GCSsys.undoSolution();
                 updateGeometry();
                 Base::Console().Warning("Invalid solution from %s solver.\n", solvername.c_str());
+            }else
+            {
+                updateNonDrivingConstraints();
             }
         } else {
             valid_solution = false;
