@@ -135,14 +135,14 @@ public:
     /// add one constraint to the sketch
     int addConstraint(const Constraint *constraint);
     /// add a fixed coordinate constraint to a point
-    int addCoordinateXConstraint(int geoId, PointPos pos, double value);
-    int addCoordinateYConstraint(int geoId, PointPos pos, double value);
+    int addCoordinateXConstraint(int geoId, PointPos pos, double * value);
+    int addCoordinateYConstraint(int geoId, PointPos pos, double *  value);
     /// add a horizontal distance constraint to two points or line ends
-    int addDistanceXConstraint(int geoId, double value);
-    int addDistanceXConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, double value);
+    int addDistanceXConstraint(int geoId, double * value);
+    int addDistanceXConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, double * value);
     /// add a vertical distance constraint to two points or line ends
-    int addDistanceYConstraint(int geoId, double value);
-    int addDistanceYConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, double value);
+    int addDistanceYConstraint(int geoId, double *  value);
+    int addDistanceYConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, double *  value);
     /// add a horizontal constraint to a geometry
     int addHorizontalConstraint(int geoId);
     int addHorizontalConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2);
@@ -152,10 +152,9 @@ public:
     /// add a coincident constraint to two points of two geometries
     int addPointCoincidentConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2);
     /// add a length or distance constraint
-    int addDistanceConstraint(int geoId1, double value);
-    int addDistanceConstraint(int geoId1, int geoId2, double value);
-    int addDistanceConstraint(int geoId1, PointPos pos1, int geoId2, double value);
-    int addDistanceConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, double value);
+    int addDistanceConstraint(int geoId1, double *  value);
+    int addDistanceConstraint(int geoId1, PointPos pos1, int geoId2, double *  value);
+    int addDistanceConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, double *  value);
     /// add a parallel constraint between two lines
     int addParallelConstraint(int geoId1, int geoId2);
     /// add a perpendicular constraint between two lines
@@ -166,14 +165,14 @@ public:
             int geoId1, PointPos pos1,
             int geoId2, PointPos pos2,
             int geoId3, PointPos pos3,
-            double value,
+            double *  value,
             ConstraintType cTyp);
     /// add a radius constraint on a circle or an arc
-    int addRadiusConstraint(int geoId, double value);
+    int addRadiusConstraint(int geoId, double *  value);
     /// add an angle constraint on a line or between two lines
-    int addAngleConstraint(int geoId, double value);
-    int addAngleConstraint(int geoId1, int geoId2, double value);
-    int addAngleConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, double value);
+    int addAngleConstraint(int geoId, double *  value);
+    int addAngleConstraint(int geoId1, int geoId2, double *  value);
+    int addAngleConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, double *  value);
     /// add angle-via-point constraint between any two curves
     int addAngleViaPointConstraint(int geoId1, int geoId2, int geoId3, PointPos pos3, double value);
     /// add an equal length or radius constraints between two lines or between circles and arcs
@@ -188,7 +187,7 @@ public:
     int addSnellsLawConstraint(int geoIdRay1, PointPos posRay1,
                                int geoIdRay2, PointPos posRay2,
                                int geoIdBnd,
-                               double n2divn1);
+                               double *  n2divn1);
     //@}
     
     /// Internal Alignment constraints
@@ -238,9 +237,16 @@ protected:
         int               midPointId;      // index in Points of the start point of this geometry
         int               endPointId;      // index in Points of the end point of this geometry
     };
+    
+    struct ConstrDef {
+        ConstrDef() : driving(false) {}
+        Constraint *    constr;             // pointer to the geometry
+        bool            driving;
+        double *        value;
+    };
 
     std::vector<GeoDef> Geoms;
-    std::vector<Constraint *> NonDrivingConstraints;
+    std::vector<ConstrDef> Constrs;
     GCS::System GCSsys;
     int ConstraintsCounter;
     std::vector<int> Conflicting;
