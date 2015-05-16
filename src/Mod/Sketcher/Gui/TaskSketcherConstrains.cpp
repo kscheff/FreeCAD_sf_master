@@ -138,12 +138,12 @@ void ConstraintView::contextMenuEvent (QContextMenuEvent* event)
         
         QAction* driven = menu.addAction(it->isDriving?tr("Disable"):tr("Enable"), this, SLOT(updateDrivingStatus()));
         // if its the right constraint
-        if (it->Type == Sketcher::Distance ||
+        if ((it->Type == Sketcher::Distance ||
             it->Type == Sketcher::DistanceX ||
             it->Type == Sketcher::DistanceY ||
             it->Type == Sketcher::Radius ||
             it->Type == Sketcher::Angle ||
-            it->Type == Sketcher::SnellsLaw) {
+            it->Type == Sketcher::SnellsLaw) && it->ConstraintNbr>0) { // datum and not external
 
             driven->setEnabled(true);    
         }
