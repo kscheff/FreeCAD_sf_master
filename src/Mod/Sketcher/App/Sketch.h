@@ -187,7 +187,8 @@ public:
     int addSnellsLawConstraint(int geoIdRay1, PointPos posRay1,
                                int geoIdRay2, PointPos posRay2,
                                int geoIdBnd,
-                               double *  n2divn1);
+                               double *  value,
+                               double *  second);
     //@}
     
     /// Internal Alignment constraints
@@ -239,10 +240,11 @@ protected:
     };
     
     struct ConstrDef {
-        ConstrDef() : driving(false) {}
-        Constraint *    constr;             // pointer to the geometry
+        ConstrDef() : driving(true) {}
+        Constraint *    constr;             // pointer to the constraint
         bool            driving;
         double *        value;
+        double *        secondvalue;        // this is needed for SnellsLaw
     };
 
     std::vector<GeoDef> Geoms;

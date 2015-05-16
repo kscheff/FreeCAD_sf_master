@@ -879,17 +879,22 @@ int Sketch::addConstraint(const Constraint *constraint)
     case SnellsLaw:
     {
         c.value = new double(constraint->Value);
+        c.secondvalue = new double(constraint->Value);
 
-        if(c.driving)
-            FixParameters.push_back(c.value);            
-        else 
-            Parameters.push_back(c.value);         
+        if(c.driving) {
+            FixParameters.push_back(c.value);
+            FixParameters.push_back(c.secondvalue);            
+        }
+        else {
+            Parameters.push_back(c.value);
+            Parameters.push_back(c.secondvalue);
+        }
 
         //assert(constraint->ThirdPos==none); //will work anyway...
         rtn = addSnellsLawConstraint(constraint->First, constraint->FirstPos,
                                      constraint->Second, constraint->SecondPos,
                                      constraint->Third,
-                                     c.value);
+                                     c.value, c.secondvalue);
     }
         break;
     case None:
@@ -1700,7 +1705,8 @@ int Sketch::addSymmetricConstraint(int geoId1, PointPos pos1, int geoId2, PointP
 int Sketch::addSnellsLawConstraint(int geoIdRay1, PointPos posRay1,
                                    int geoIdRay2, PointPos posRay2,
                                    int geoIdBnd,
-                                   double * value
+                                   double * value, 
+                                   double * secondvalue
                                   )
 {
 
@@ -1735,9 +1741,8 @@ int Sketch::addSnellsLawConstraint(int geoIdRay1, PointPos posRay1,
     // add the parameters (refractive indexes)   
     // n1 uses the place hold by n2divn1, so that is retrivable in updateNonDrivingConstraints
     double *n1 = value;
-    FixParameters.push_back(new double(0.0));
-    double *n2 = FixParameters[FixParameters.size()-1];
-
+    double *n2 = secondvalue;
+    
     double n2divn1=*value;
     
     if ( abs(n2divn1) >= 1.0 ){
@@ -2058,7 +2063,7 @@ bool Sketch::updateNonDrivingConstraints()
         if(!(*it).driving) {
             if((*it).constr->Type==SnellsLaw) {
                 double n1 = *((*it).value);
-                double n2 = *((*it).value+1);
+                double n2 = *((*it).secondvalue);
                 
                 (*it).constr->Value = n2/n1;
             }

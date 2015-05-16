@@ -2384,6 +2384,9 @@ QColor ViewProviderSketch::constrColor(int constraintId)
     static QColor constrIcoColor((int)(ConstrIcoColor [0] * 255.0f),
                                  (int)(ConstrIcoColor[1] * 255.0f),
                                  (int)(ConstrIcoColor[2] * 255.0f));
+    static QColor nonDrivingConstrIcoColor((int)(NonDrivingConstrDimColor[0] * 255.0f),
+                                 (int)(NonDrivingConstrDimColor[1] * 255.0f),
+                                 (int)(NonDrivingConstrDimColor[2] * 255.0f));
     static QColor constrIconSelColor ((int)(SelectColor[0] * 255.0f),
                                       (int)(SelectColor[1] * 255.0f),
                                       (int)(SelectColor[2] * 255.0f));
@@ -2397,7 +2400,9 @@ QColor ViewProviderSketch::constrColor(int constraintId)
         return constrIconPreselColor;
     else if (edit->SelConstraintSet.find(constraintId) != edit->SelConstraintSet.end())
         return constrIconSelColor;
-    else 
+    else if(!constraints[constraintId]->isDriving)
+        return nonDrivingConstrIcoColor;
+    else
         return constrIcoColor;
         
 }
