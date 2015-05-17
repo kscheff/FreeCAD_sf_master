@@ -734,11 +734,9 @@ void CmdSketcherConstrainLock::activated(int iMsg)
         
         Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.setDriving(%i,%s)",
         selection[0].getFeatName(),ConStr.size()-2,"False");
-        finishDistanceConstraint(this, Obj,false);
         
         Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.setDriving(%i,%s)",
         selection[0].getFeatName(),ConStr.size()-1,"False");
-        finishDistanceConstraint(this, Obj,false);
     }
     
     // finish the transaction and update
@@ -898,12 +896,10 @@ void CmdSketcherConstrainDistance::activated(int iMsg)
     getIdsFromName(SubNames[0], Obj, GeoId1, PosId1);
     if (SubNames.size() == 2)
         getIdsFromName(SubNames[1], Obj, GeoId2, PosId2);
-
-    if (checkBothExternal(GeoId1, GeoId2)){
-        showNoConstraintBetweenExternal();
-        return;
-}
-    else if (isVertex(GeoId1,PosId1) && (GeoId2 == -2 || GeoId2 == -1)) {
+    
+    bool bothexternal=checkBothExternal(GeoId1, GeoId2);
+    
+    if (isVertex(GeoId1,PosId1) && (GeoId2 == -2 || GeoId2 == -1)) {
         std::swap(GeoId1,GeoId2);
         std::swap(PosId1,PosId2);
     }
@@ -935,8 +931,16 @@ void CmdSketcherConstrainDistance::activated(int iMsg)
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Distance',%d,%d,%d,%d,%f)) ",
                 selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2,(pnt2-pnt1).Length());
         }
-
-        finishDistanceConstraint(this, Obj);
+        
+        if (bothexternal) { // it is a constraint on a external line, make it non-driving
+            const std::vector<Sketcher::Constraint *> &ConStr = Obj->Constraints.getValues();
+            
+            Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.setDriving(%i,%s)",
+            selection[0].getFeatName(),ConStr.size()-1,"False");
+            finishDistanceConstraint(this, Obj,false);
+        }
+        else
+            finishDistanceConstraint(this, Obj,true);
         return;
     }
     else if ((isVertex(GeoId1,PosId1) && isEdge(GeoId2,PosId2)) ||
@@ -960,7 +964,16 @@ void CmdSketcherConstrainDistance::activated(int iMsg)
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Distance',%d,%d,%d,%f)) ",
                 selection[0].getFeatName(),GeoId1,PosId1,GeoId2,ActDist);
 
-            finishDistanceConstraint(this, Obj);
+            if (bothexternal) { // it is a constraint on a external line, make it non-driving
+                const std::vector<Sketcher::Constraint *> &ConStr = Obj->Constraints.getValues();
+                
+                Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.setDriving(%i,%s)",
+                selection[0].getFeatName(),ConStr.size()-1,"False");
+                finishDistanceConstraint(this, Obj,false);
+            }
+            else
+                finishDistanceConstraint(this, Obj,true);
+            
             return;
         }
     }
@@ -1137,11 +1150,9 @@ void CmdSketcherConstrainDistanceX::activated(int iMsg)
     if (SubNames.size() == 2)
         getIdsFromName(SubNames[1], Obj, GeoId2, PosId2);
 
-    if (checkBothExternal(GeoId1, GeoId2)){
-        showNoConstraintBetweenExternal();
-        return;
-    }
-    else if (GeoId2 == -1 || GeoId2 == -2) {
+    bool bothexternal=checkBothExternal(GeoId1, GeoId2);
+
+    if (GeoId2 == -1 || GeoId2 == -2) {
         std::swap(GeoId1,GeoId2);
         std::swap(PosId1,PosId2);
     }
@@ -1164,7 +1175,16 @@ void CmdSketcherConstrainDistanceX::activated(int iMsg)
             Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('DistanceX',%d,%d,%d,%d,%f)) ",
             selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2,ActLength);
 
-        finishDistanceConstraint(this, Obj);
+        if (bothexternal) { // it is a constraint on a external line, make it non-driving
+            const std::vector<Sketcher::Constraint *> &ConStr = Obj->Constraints.getValues();
+            
+            Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.setDriving(%i,%s)",
+            selection[0].getFeatName(),ConStr.size()-1,"False");
+            finishDistanceConstraint(this, Obj,false);
+        }
+        else
+            finishDistanceConstraint(this, Obj,true);
+
         return;
     }
     else if (isEdge(GeoId1,PosId1) && GeoId2 == Constraint::GeoUndef)  { // horizontal length of a line
@@ -1283,11 +1303,9 @@ void CmdSketcherConstrainDistanceY::activated(int iMsg)
     if (SubNames.size() == 2)
         getIdsFromName(SubNames[1], Obj, GeoId2, PosId2);
 
-    if (checkBothExternal(GeoId1, GeoId2)){
-        showNoConstraintBetweenExternal();
-        return;
-    }
-    else if (GeoId2 == -1 || GeoId2 == -2) {
+    bool bothexternal=checkBothExternal(GeoId1, GeoId2);
+    
+    if (GeoId2 == -1 || GeoId2 == -2) {
         std::swap(GeoId1,GeoId2);
         std::swap(PosId1,PosId2);
     }
@@ -1308,7 +1326,16 @@ void CmdSketcherConstrainDistanceY::activated(int iMsg)
             Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('DistanceY',%d,%d,%d,%d,%f)) ",
             selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2,ActLength);
 
-        finishDistanceConstraint(this, Obj);
+        if (bothexternal) { // it is a constraint on a external line, make it non-driving
+            const std::vector<Sketcher::Constraint *> &ConStr = Obj->Constraints.getValues();
+            
+            Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.setDriving(%i,%s)",
+            selection[0].getFeatName(),ConStr.size()-1,"False");
+            finishDistanceConstraint(this, Obj,false);
+        }
+        else
+            finishDistanceConstraint(this, Obj,true);
+        
         return;
     }
     else if (isEdge(GeoId1,PosId1) && GeoId2 == Constraint::GeoUndef)  { // vertical length of a line
@@ -2299,6 +2326,8 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
             std::swap(GeoId2,GeoId3);
             std::swap(PosId2,PosId3);
         };
+        
+        bool bothexternal=checkBothExternal(GeoId1, GeoId2);
 
         if (isEdge(GeoId1, PosId1) && isEdge(GeoId2, PosId2) && isVertex(GeoId3, PosId3)) {
             double ActAngle = 0.0;
@@ -2330,17 +2359,24 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
             Gui::Command::doCommand(
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('AngleViaPoint',%d,%d,%d,%d,%f)) ",
                 selection[0].getFeatName(),GeoId1,GeoId2,GeoId3,PosId3,ActAngle);
-
-            finishDistanceConstraint(this, Obj);
+            
+            if (bothexternal) { // it is a constraint on a external line, make it non-driving
+                const std::vector<Sketcher::Constraint *> &ConStr = Obj->Constraints.getValues();
+                
+                Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.setDriving(%i,%s)",
+                selection[0].getFeatName(),ConStr.size()-1,"False");
+                finishDistanceConstraint(this, Obj,false);
+            }
+            else
+                finishDistanceConstraint(this, Obj,true);
+            
             return;
         };
 
     } else if (SubNames.size() < 3) {
 
-        if (checkBothExternal(GeoId1, GeoId2)){
-            showNoConstraintBetweenExternal();
-            return;
-        }
+        bool bothexternal=checkBothExternal(GeoId1, GeoId2);
+        
         if (isVertex(GeoId1,PosId1) && isEdge(GeoId2,PosId2)) {
             std::swap(GeoId1,GeoId2);
             std::swap(PosId1,PosId2);
@@ -2402,7 +2438,16 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
                     Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Angle',%d,%d,%d,%d,%f)) ",
                     selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2,ActAngle);
 
-                finishDistanceConstraint(this, Obj);
+                if (bothexternal) { // it is a constraint on a external line, make it non-driving
+                    const std::vector<Sketcher::Constraint *> &ConStr = Obj->Constraints.getValues();
+                    
+                    Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.setDriving(%i,%s)",
+                    selection[0].getFeatName(),ConStr.size()-1,"False");
+                    finishDistanceConstraint(this, Obj,false);
+                }
+                else
+                    finishDistanceConstraint(this, Obj,true);
+        
                 return;
             }
         } else if (isEdge(GeoId1,PosId1)) { // line angle
@@ -2448,7 +2493,16 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
                     Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Angle',%d,%f)) ",
                     selection[0].getFeatName(),GeoId1,angle);
 
-                finishDistanceConstraint(this, Obj);
+                if (GeoId1 < -2) { // it is a constraint on a external line, make it non-driving
+                    const std::vector<Sketcher::Constraint *> &ConStr = Obj->Constraints.getValues();
+                    
+                    Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.setDriving(%i,%s)",
+                    selection[0].getFeatName(),ConStr.size()-1,"False");
+                    finishDistanceConstraint(this, Obj,false);
+                }
+                else
+                    finishDistanceConstraint(this, Obj,true);
+                
                 return;
             }
         }
@@ -2792,10 +2846,10 @@ void CmdSketcherConstrainSnellsLaw::activated(int iMsg)
             std::swap(PosId2,PosId3);
         }
 
+        bool allexternal=false;
         //a bunch of validity checks
         if ((GeoId1 < 0 && GeoId2 < 0 && GeoId3 < 0)) {
-            strError = QObject::tr("Cannot add a constraint between external geometries!", dmbg);
-            throw(Base::Exception(""));
+            allexternal=true;
         }
 
         if (!(isVertex(GeoId1,PosId1) && !isSimpleVertex(Obj, GeoId1, PosId1) &&
@@ -2805,27 +2859,31 @@ void CmdSketcherConstrainSnellsLaw::activated(int iMsg)
             throw(Base::Exception(""));
         };
 
-        //the essence.
-        //Unlike other constraints, we'll ask for a value immediately.
-        QDialog dlg(Gui::getMainWindow());
-        Ui::InsertDatum ui_Datum;
-        ui_Datum.setupUi(&dlg);
-        dlg.setWindowTitle(EditDatumDialog::tr("Refractive index ratio", dmbg));
-        ui_Datum.label->setText(EditDatumDialog::tr("Ratio n2/n1:", dmbg));
-        Base::Quantity init_val;
-        init_val.setUnit(Base::Unit());
-        init_val.setValue(0.0);
+        double n2divn1=0;
+        
+        if(!allexternal){
+            //the essence.
+            //Unlike other constraints, we'll ask for a value immediately.
+            QDialog dlg(Gui::getMainWindow());
+            Ui::InsertDatum ui_Datum;
+            ui_Datum.setupUi(&dlg);
+            dlg.setWindowTitle(EditDatumDialog::tr("Refractive index ratio", dmbg));
+            ui_Datum.label->setText(EditDatumDialog::tr("Ratio n2/n1:", dmbg));
+            Base::Quantity init_val;
+            init_val.setUnit(Base::Unit());
+            init_val.setValue(0.0);
 
-        ui_Datum.labelEdit->setValue(init_val);
-        ui_Datum.labelEdit->setParamGrpPath(QByteArray("User parameter:BaseApp/History/SketcherRefrIndexRatio"));
-        ui_Datum.labelEdit->setToLastUsedValue();
-        ui_Datum.labelEdit->selectNumber();
+            ui_Datum.labelEdit->setValue(init_val);
+            ui_Datum.labelEdit->setParamGrpPath(QByteArray("User parameter:BaseApp/History/SketcherRefrIndexRatio"));
+            ui_Datum.labelEdit->setToLastUsedValue();
+            ui_Datum.labelEdit->selectNumber();
 
-        if (dlg.exec() != QDialog::Accepted) return;
-        ui_Datum.labelEdit->pushToHistory();
+            if (dlg.exec() != QDialog::Accepted) return;
+            ui_Datum.labelEdit->pushToHistory();
 
-        Base::Quantity newQuant = ui_Datum.labelEdit->value();
-        double n2divn1 = newQuant.getValue();
+            Base::Quantity newQuant = ui_Datum.labelEdit->value();
+            double n2divn1 = newQuant.getValue();
+        }
 
         //add constraint
         openCommand("add Snell's law constraint");
@@ -2844,6 +2902,13 @@ void CmdSketcherConstrainSnellsLaw::activated(int iMsg)
             Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('SnellsLaw',%d,%d,%d,%d,%d,%.12f)) ",
             selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2,GeoId3,n2divn1);
 
+        if (allexternal) { // it is a constraint on a external line, make it non-driving
+            const std::vector<Sketcher::Constraint *> &ConStr = Obj->Constraints.getValues();
+            
+            Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.setDriving(%i,%s)",
+            selection[0].getFeatName(),ConStr.size()-1,"False");
+        }            
+        
         commitCommand();
         updateActive();
 
