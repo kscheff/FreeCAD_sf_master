@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>177</width>
+    <width>212</width>
     <height>288</height>
    </rect>
   </property>
@@ -30,22 +30,22 @@
        </property>
        <item>
         <property name="text">
-         <string>All (Driving)</string>
+         <string>All</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Normal (Driving)</string>
+         <string>Normal</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Datums (Driving)</string>
+         <string>Datums</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Named (Driving)</string>
+         <string>Named</string>
         </property>
        </item>
        <item>

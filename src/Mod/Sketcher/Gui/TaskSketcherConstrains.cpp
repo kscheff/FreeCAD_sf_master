@@ -512,7 +512,7 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
                     ui->listWidgetConstraints->addItem(new ConstraintItem(symm,name,i-1,(*it)->Type));
                 break;
             case Sketcher::Distance:
-                if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
+                if (((Filter<3 || !(*it)->Name.empty())) || (Filter==4 && !(*it)->isDriving)) {
                     ConstraintItem* item = new ConstraintItem((*it)->isDriving?dist:dist_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
                     name = QString::fromLatin1("%1 (%2)").arg(name).arg(Base::Quantity((*it)->Value,Base::Unit::Length).getUserString());
                     item->setData(Qt::UserRole, name);                    
@@ -520,7 +520,7 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
                 }
                 break;
             case Sketcher::DistanceX:
-                if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
+                if (((Filter<3 || !(*it)->Name.empty())) || (Filter==4 && !(*it)->isDriving)) {
                     ConstraintItem* item = new ConstraintItem((*it)->isDriving?hdist:hdist_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
                     name = QString::fromLatin1("%1 (%2)").arg(name).arg(Base::Quantity(std::abs((*it)->Value),Base::Unit::Length).getUserString());
                     item->setData(Qt::UserRole, name);
@@ -528,7 +528,7 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
                 }
                 break;
             case Sketcher::DistanceY:
-                if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
+                if (((Filter<3 || !(*it)->Name.empty())) || (Filter==4 && !(*it)->isDriving)) {
                     ConstraintItem* item = new ConstraintItem((*it)->isDriving?vdist:vdist_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
                     name = QString::fromLatin1("%1 (%2)").arg(name).arg(Base::Quantity(std::abs((*it)->Value),Base::Unit::Length).getUserString());
                     item->setData(Qt::UserRole, name);
@@ -536,7 +536,7 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
                 }
                 break;
             case Sketcher::Radius:
-                if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
+                if (((Filter<3 || !(*it)->Name.empty())) || (Filter==4 && !(*it)->isDriving)) {
                     ConstraintItem* item = new ConstraintItem((*it)->isDriving?radi:radi_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
                     name = QString::fromLatin1("%1 (%2)").arg(name).arg(Base::Quantity((*it)->Value,Base::Unit::Length).getUserString());
                     item->setData(Qt::UserRole, name);
@@ -544,7 +544,7 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
                 }
                 break;
             case Sketcher::Angle:
-                if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
+                if (((Filter<3 || !(*it)->Name.empty())) || (Filter==4 && !(*it)->isDriving)) {
                     ConstraintItem* item = new ConstraintItem((*it)->isDriving?angl:angl_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
                     name = QString::fromLatin1("%1 (%2)").arg(name).arg(Base::Quantity(Base::toDegrees<double>(std::abs((*it)->Value)),Base::Unit::Angle).getUserString());
                     item->setData(Qt::UserRole, name);
@@ -552,7 +552,7 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
                 }
                 break;
             case Sketcher::SnellsLaw:
-                if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
+                if (((Filter<3 || !(*it)->Name.empty())) || (Filter==4 && !(*it)->isDriving)) {
                     ConstraintItem* item = new ConstraintItem((*it)->isDriving?snell:snell_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
 
                     double v = (*it)->Value;
