@@ -443,6 +443,13 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
     QIcon iaellipsefocus1 ( Gui::BitmapFactory().pixmap("Constraint_InternalAlignment_Ellipse_Focus1") );
     QIcon iaellipsefocus2 ( Gui::BitmapFactory().pixmap("Constraint_InternalAlignment_Ellipse_Focus2") );
     QIcon iaellipseother ( Gui::BitmapFactory().pixmap("Constraint_InternalAlignment") );
+    
+    QIcon hdist_driven ( Gui::BitmapFactory().pixmap("Constraint_HorizontalDistance_Driven") );
+    QIcon vdist_driven( Gui::BitmapFactory().pixmap("Constraint_VerticalDistance_Driven") );
+    QIcon dist_driven ( Gui::BitmapFactory().pixmap("Constraint_Length_Driven") );
+    QIcon radi_driven ( Gui::BitmapFactory().pixmap("Constraint_Radius_Driven") );
+    QIcon angl_driven ( Gui::BitmapFactory().pixmap("Constraint_InternalAngle_Driven") );
+    QIcon snell_driven ( Gui::BitmapFactory().pixmap("Constraint_SnellsLaw_Driven") );
 
     assert(sketchView);
     // Build up ListView with the constraints
@@ -506,14 +513,15 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
                 break;
             case Sketcher::Distance:
                 if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
-                    ConstraintItem* item = new ConstraintItem(dist,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
+                    ConstraintItem* item = new ConstraintItem((*it)->isDriving?dist:dist_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
                     name = QString::fromLatin1("%1 (%2)").arg(name).arg(Base::Quantity((*it)->Value,Base::Unit::Length).getUserString());
+                    item->setData(Qt::UserRole, name);                    
                     ui->listWidgetConstraints->addItem(item);
                 }
                 break;
             case Sketcher::DistanceX:
                 if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
-                    ConstraintItem* item = new ConstraintItem(hdist,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
+                    ConstraintItem* item = new ConstraintItem((*it)->isDriving?hdist:hdist_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
                     name = QString::fromLatin1("%1 (%2)").arg(name).arg(Base::Quantity(std::abs((*it)->Value),Base::Unit::Length).getUserString());
                     item->setData(Qt::UserRole, name);
                     ui->listWidgetConstraints->addItem(item);
@@ -521,7 +529,7 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
                 break;
             case Sketcher::DistanceY:
                 if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
-                    ConstraintItem* item = new ConstraintItem(vdist,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
+                    ConstraintItem* item = new ConstraintItem((*it)->isDriving?vdist:vdist_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
                     name = QString::fromLatin1("%1 (%2)").arg(name).arg(Base::Quantity(std::abs((*it)->Value),Base::Unit::Length).getUserString());
                     item->setData(Qt::UserRole, name);
                     ui->listWidgetConstraints->addItem(item);
@@ -529,7 +537,7 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
                 break;
             case Sketcher::Radius:
                 if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
-                    ConstraintItem* item = new ConstraintItem(radi,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
+                    ConstraintItem* item = new ConstraintItem((*it)->isDriving?radi:radi_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
                     name = QString::fromLatin1("%1 (%2)").arg(name).arg(Base::Quantity((*it)->Value,Base::Unit::Length).getUserString());
                     item->setData(Qt::UserRole, name);
                     ui->listWidgetConstraints->addItem(item);
@@ -537,7 +545,7 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
                 break;
             case Sketcher::Angle:
                 if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
-                    ConstraintItem* item = new ConstraintItem(angl,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
+                    ConstraintItem* item = new ConstraintItem((*it)->isDriving?angl:angl_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
                     name = QString::fromLatin1("%1 (%2)").arg(name).arg(Base::Quantity(Base::toDegrees<double>(std::abs((*it)->Value)),Base::Unit::Angle).getUserString());
                     item->setData(Qt::UserRole, name);
                     ui->listWidgetConstraints->addItem(item);
@@ -545,7 +553,7 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
                 break;
             case Sketcher::SnellsLaw:
                 if (((Filter<3 || !(*it)->Name.empty()) && (*it)->isDriving) || (Filter==4 && !(*it)->isDriving)) {
-                    ConstraintItem* item = new ConstraintItem(snell,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
+                    ConstraintItem* item = new ConstraintItem((*it)->isDriving?snell:snell_driven,name,i-1,(*it)->Type,(*it)->isDriving, ((*it)->First>=0 || (*it)->Second>=0 || (*it)->Third>=0));
 
                     double v = (*it)->Value;
                     double n1 = 1.0;

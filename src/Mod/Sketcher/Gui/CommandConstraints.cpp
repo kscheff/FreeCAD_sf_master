@@ -2882,7 +2882,7 @@ void CmdSketcherConstrainSnellsLaw::activated(int iMsg)
             ui_Datum.labelEdit->pushToHistory();
 
             Base::Quantity newQuant = ui_Datum.labelEdit->value();
-            double n2divn1 = newQuant.getValue();
+            n2divn1 = newQuant.getValue();
         }
 
         //add constraint
